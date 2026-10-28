@@ -29,13 +29,11 @@ Fertige Texte und Angaben für **App Store Connect**. Die Zeichenbegrenzungen vo
 | Inhaltsrechte | keine Inhalte Dritter |
 | Werbe-ID (IDFA) | nein |
 
-`do2mad` ersetzt `tools/publish-github.sh` automatisch durch deinen GitHub-Namen.
-
 ## Ablauf in Kurzform
 1. In Xcode die Versionsnummer prüfen (Target → General → Version / Build).
 2. *Product → Archive* → *Distribute App* → *App Store Connect* → *Upload*.
 3. In App Store Connect eine neue App mit Bundle-ID `de.1mhz.psucontrol` anlegen und die Texte aus den Dateien hier einfügen.
-4. **TestFlight:** Nach der automatischen Verarbeitung (meist 10–30 min) unter *TestFlight → Externe Tester* eine Gruppe anlegen und *Öffentlichen Link aktivieren*. Den Link trägst du in `README.md` und `README.de.md` bei `TESTFLIGHT_URL` ein. Für externe Tester prüft Apple den ersten Build kurz (Beta App Review).
+4. **TestFlight:** Nach der automatischen Verarbeitung (meist 10–30 min) unter *TestFlight → Externe Tester* eine Gruppe anlegen und *Öffentlichen Link aktivieren*. Der Link ist in `README.md` und `README.de.md` eingetragen. Für externe Tester prüft Apple den ersten Build kurz (Beta App Review).
 5. **App Store:** Screenshots hochladen, Prüfhinweise einfügen, *Zur Prüfung einreichen*. Den App-Store-Link (`https://apps.apple.com/app/id…`) trägst du danach bei `APPSTORE_URL` ein.
 
 ## Hinweise zur Prüfung
