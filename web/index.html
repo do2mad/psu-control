@@ -1,0 +1,1305 @@
+<!doctype html>
+<!-- PSU Control – SPDX-License-Identifier: MIT – siehe LICENSE -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UDP3305S-E Steuerung</title>
+<style>
+:root{
+  --c1:#2fdcf0;          /* CH1 tuerkis   */
+  --c2:#fff000;          /* CH2 gelb      */
+  --c3:#b347ff;          /* CH3 lila      */
+  --body:#e4e0d6; --body2:#d6d1c5; --bezel:#111; --screen:#000;
+  --key:#efebe2; --keyg:#8d939b; --lcd-dim:.42;
+  --font:"Helvetica Neue","Arial Narrow",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#2b2d31;font-family:var(--font);color:#222}
+button{font:inherit;cursor:pointer}
+button,.f,.soft div,.cb,.row.e,.col{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.wrap{max-width:1380px;margin:0 auto;padding:18px}
+
+/* ---------- Gehaeuse ---------- */
+.device{background:linear-gradient(#ebe7de,#dcd7cb);border-radius:18px;padding:18px 20px 22px;
+  box-shadow:inset 0 2px 0 #fff8,inset 0 -3px 0 #0002,0 20px 50px -20px #000;display:grid;grid-template-columns:1fr 290px;gap:20px}
+.model{grid-column:1/-1;display:flex;align-items:baseline;gap:18px;padding:0 6px;color:#2a2a2a}
+.model b{font-size:26px;font-style:italic;letter-spacing:.01em}
+.model span{font-size:18px;font-weight:600;color:#333}
+.model .ip{margin-left:auto;font-size:12px;color:#666;font-weight:400}
+
+/* ---------- Display ---------- */
+.bezel{background:var(--bezel);border-radius:14px;padding:16px 18px 12px;box-shadow:inset 0 0 0 2px #000,0 1px 0 #fff9}
+.screen{background:var(--screen);container-type:inline-size;border-radius:3px;overflow:hidden;position:relative;user-select:none}
+.status{display:flex;align-items:center;gap:10px;height:7cqw;max-height:40px;padding:0 1.4cqw;color:#ddd;font-size:2cqw}
+.status svg{height:70%;width:auto}
+.status .idn{color:#777;font-size:1.6cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status .sp{flex:1}
+.lan.ok{color:#e9e9e9}.lan.bad{color:#ff3b30}
+.main{display:flex;align-items:stretch}
+.main>.cols{flex:1 1 auto;min-width:0}
+.cols{display:grid;grid-auto-columns:1fr;grid-auto-flow:column;padding:0 .8cqw}
+.wave{display:none;position:relative;flex:1 1 auto;min-width:0;margin-right:.8cqw;cursor:pointer}
+.wave canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.main.wavemode>.cols{flex:0 0 36%;padding-right:0}
+.main.wavemode .wave{display:block}
+.wtitle{display:none;color:#fff;font-size:2.6cqw;font-weight:500;margin-left:-.4cqw}
+.screen.wavemode .wtitle{display:inline}
+.screen.wavemode .idn{display:none}
+.col{--a:#fff;border:2px solid color-mix(in srgb,var(--a) 70%,#000);border-left-width:1px;border-right-width:1px;position:relative;cursor:pointer}
+.col.sel{border:3px solid var(--a);z-index:2}
+.head{display:flex;justify-content:space-between;align-items:center;padding:.4cqw 1cqw;font-size:3.3cqw;color:var(--a);border-bottom:2px solid color-mix(in srgb,var(--a) 70%,#000)}
+.col.on .head{background:var(--a);color:#062126}
+.head .cc{color:#ff3b30}
+.col.on .head .cc{color:#b00000;font-weight:700}
+.meas{padding:1.2cqw 1.6cqw .6cqw;color:var(--a)}
+.col:not(.on) .meas{opacity:var(--lcd-dim)}
+.row{display:flex;justify-content:flex-end;align-items:baseline;line-height:1.08;font-variant-numeric:tabular-nums;font-weight:500}
+.row .n{font-size:6.8cqw;letter-spacing:-.02em}
+.row .u{font-size:3cqw;width:5.2cqw;text-align:left;margin-left:.8cqw}
+.row.e{cursor:pointer}
+.row.e .u{font-size:2.8cqw}
+.cols.zoom .meas{padding-right:22cqw}.cols.zoom .row .n{font-size:13cqw}.cols.zoom .row .u{font-size:5cqw;width:8cqw}
+.cols.zoom .head{font-size:4.4cqw}.cols.zoom .set div{font-size:3.6cqw}.cols.zoom .set h5{font-size:3.4cqw}
+.set{display:grid;grid-template-columns:1fr 1fr;border-top:2px solid color-mix(in srgb,var(--a) 70%,#000)}
+.set>div{padding:.5cqw .4cqw .8cqw;text-align:center;color:var(--a)}
+.set>div+div{border-left:2px solid color-mix(in srgb,var(--a) 70%,#000)}
+.set h5{margin:0 0 .3cqw;font-size:2.7cqw;font-weight:500;color:var(--a)}
+.f{display:flex;justify-content:center;align-items:center;gap:.6cqw;font-size:2.6cqw;font-variant-numeric:tabular-nums;line-height:1.35;border-radius:2px;padding:0 .3cqw;cursor:pointer}
+.f small{font-size:.8em}
+.f:hover{background:#ffffff14}
+.f.focus{outline:1px solid #fff;outline-offset:-1px}
+.f.edit .v{background:#1e5bff;color:#fff;padding:0 .3cqw}
+.f.pend .v{color:#fff}
+.cb{display:inline-block;width:2.1cqw;height:2.1cqw;border:.25cqw solid currentColor;position:relative;cursor:pointer}
+.cb.on::after{content:"";position:absolute;left:24%;top:2%;width:30%;height:62%;border:solid currentColor;border-width:0 .35cqw .35cqw 0;transform:rotate(40deg)}
+.soft{display:grid;grid-template-columns:repeat(5,1fr);gap:.6cqw;padding:.8cqw .8cqw .9cqw}
+.soft div{background:linear-gradient(#2d2d2d,#151515);color:#eee;text-align:center;font-size:2.8cqw;padding:.7cqw 0;border-radius:2px;cursor:pointer}
+.soft div.act{background:linear-gradient(#4a4a4a,#2a2a2a);color:#fff}
+.offline{color:#aaa;text-align:center;font-size:2.4cqw;padding:12cqw 4cqw}
+.overlay{position:absolute;inset:7cqw 6cqw 8cqw;background:#0b0b0b;border:2px solid #666;display:none;flex-direction:column;padding:2cqw;color:#ddd;font-size:2.4cqw;z-index:5}
+.overlay.show{display:flex}
+.overlay h3{margin:0 0 1.4cqw;font-size:3cqw;font-weight:500}
+.slots{display:grid;grid-template-columns:repeat(5,1fr);gap:1cqw}
+.slots button{background:#1a1a1a;color:#ddd;border:1px solid #444;padding:1.4cqw 0;font-size:2.6cqw}
+.slots button.s{background:#1e5bff;border-color:#1e5bff;color:#fff}
+.ovbtns{display:flex;gap:1.4cqw;margin-top:auto}
+.ovbtns button{flex:1;background:#262626;color:#eee;border:1px solid #555;padding:1.4cqw;font-size:2.6cqw}
+.ovbtns button.pri{background:#1e5bff;border-color:#1e5bff}
+.physsoft{display:grid;grid-template-columns:repeat(5,1fr);gap:4%;padding:14px 3% 0}
+.physsoft button{height:30px;border:0;border-radius:7px;background:linear-gradient(#9da3ab,#7d838b);box-shadow:inset 0 1px 0 #fff6,0 3px 0 #555b,0 4px 6px #0005}
+.physsoft button:active{transform:translateY(2px);box-shadow:inset 0 1px 0 #fff6,0 1px 0 #555b}
+
+/* ---------- Tastenfeld ---------- */
+.panel{display:grid;grid-template-columns:78px 1fr;gap:14px 16px;align-content:start}
+.key{border:0;border-radius:9px;background:linear-gradient(#f6f3ec,#dcd7cc);color:#222;font-weight:700;font-size:13px;
+  box-shadow:inset 0 1px 0 #fff,0 3px 0 #a9a497,0 5px 8px #0003;min-height:40px;line-height:1.05;padding:4px}
+.key:active{transform:translateY(2px);box-shadow:inset 0 1px 0 #fff,0 1px 0 #a9a497}
+.key.g{background:linear-gradient(#a0a6ad,#858b93);color:#111}
+.key.lit{background:radial-gradient(#b9ff9a,#39e21a 70%);color:#0b3a00;box-shadow:0 0 16px #46ff2a,0 3px 0 #2a8c18}
+.key.act{outline:3px solid #2c8cff;outline-offset:1px}
+.fn{display:flex;flex-direction:column;gap:12px}
+.fn .key{height:46px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:#a3a8ae;padding:10px;border-radius:8px}
+.pad .key{height:40px;font-size:16px}
+.chrow{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px;padding:12px;border-radius:10px;background:#ece9e2;box-shadow:inset 0 0 0 1px #c9c4b8}
+.chrow .key{height:44px}
+.chrow .k1{border-bottom:4px solid var(--c1)}.chrow .k2{border-bottom:4px solid #e8c400}.chrow .k3{border-bottom:4px solid var(--c3)}
+.chrow .all{grid-column:1/-1;justify-self:center;width:52%}
+
+/* ---------- Konsole ---------- */
+#console{margin-top:18px}
+#console details{background:#1d1f23;border:1px solid #3a3d44;border-radius:12px;color:#cfd3da}
+#console summary{padding:12px 16px;cursor:pointer;color:#9aa0a8}
+.cbody{padding:0 16px 16px}
+.crow{display:flex;gap:8px}
+.crow input{flex:1;background:#0e1013;border:1px solid #3a3d44;border-radius:8px;padding:8px 10px;color:#e6e8eb;font:13px ui-monospace,Menlo,monospace}
+.crow button{background:#2a2e35;border:1px solid #3a3d44;color:#e6e8eb;border-radius:8px;padding:8px 14px}
+#log{margin-top:10px;height:170px;overflow:auto;background:#0a0b0d;border:1px solid #3a3d44;border-radius:8px;padding:8px 10px;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
+#log .e{color:#ff6b61}#log .r{color:#9ff0c0}#log .s{color:#7c838d}
+.hint{color:#8a9099;font-size:12px;margin:10px 4px 0}
+#toast{position:fixed;right:20px;bottom:20px;max-width:420px;background:#2a1414;border:1px solid #6a2d2a;color:#ffd6d2;padding:10px 14px;border-radius:10px;display:none;z-index:10;font-size:14px}
+
+
+/* ---------- Menues PRESET / UTILITY ---------- */
+.menu{position:absolute;left:0;right:0;top:min(7cqw,40px);bottom:0;background:#050505;display:none;flex-direction:column;z-index:6;color:#e8e8e8;font-size:2.3cqw}
+.menu.show{display:flex}
+.mhead{display:flex;align-items:center;gap:1cqw;padding:.8cqw 1.4cqw;background:linear-gradient(#2a2a2a,#161616);border-bottom:2px solid #444}
+.mhead b{font-size:2.8cqw;font-weight:600;margin-right:1.5cqw}
+.mhead .tabs{display:flex;gap:.6cqw}
+.mhead .tabs button{background:#111;border:1px solid #444;color:#bbb;font-size:2.3cqw;padding:.4cqw 1.6cqw;border-radius:3px}
+.mhead .tabs button.on{background:#1e5bff;border-color:#1e5bff;color:#fff}
+.mhead .x{margin-left:auto;background:none;border:0;color:#999;font-size:3.4cqw;line-height:1}
+.mbody{flex:1;overflow:auto;padding:1.2cqw 1.4cqw}
+.mfoot{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:.6cqw;padding:.8cqw}
+.mfoot button{background:linear-gradient(#2d2d2d,#151515);color:#eee;border:0;font-size:2.5cqw;padding:.9cqw 0;border-radius:2px}
+.mfoot button.pri{background:linear-gradient(#2f6bff,#1a4fd6)}
+.mfoot button:disabled{opacity:.4}
+.ptab{width:100%;border-collapse:collapse}
+.ptab th{font-weight:500;color:#9a9a9a;font-size:2cqw;text-align:right;padding:.4cqw .6cqw;border-bottom:1px solid #333}
+.ptab th:first-child{text-align:left}
+.ptab td{padding:.5cqw .6cqw;border-bottom:1px solid #1e1e1e;text-align:right;color:var(--a)}
+.ptab td:first-child{text-align:left;font-weight:600;font-size:2.6cqw}
+.menu input[type=text],.menu input[type=number],.menu select{background:#0d0d0d;border:1px solid #3a3a3a;color:inherit;font:inherit;font-variant-numeric:tabular-nums;padding:.35cqw .6cqw;border-radius:2px;text-align:right;width:12cqw}
+.menu input.dirty{border-color:#1e5bff;background:#0b1630}
+.menu input:focus{outline:none;border-color:#6b8cff}
+.menu select{text-align:left;width:auto}
+.tg{display:inline-flex;align-items:center;gap:.6cqw;cursor:pointer}
+.tg input{display:none}
+.tg i{width:2.2cqw;height:2.2cqw;border:.25cqw solid currentColor;display:inline-block;position:relative}
+.tg input:checked+i::after{content:"";position:absolute;left:24%;top:2%;width:30%;height:62%;border:solid currentColor;border-width:0 .35cqw .35cqw 0;transform:rotate(40deg)}
+.ugrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2cqw;align-items:start}.ucol{display:flex;flex-direction:column;gap:1.2cqw}
+#mUtil{font-size:1.9cqw}#mUtil .mbody{padding:1cqw}
+.ubox{border:1px solid #333;padding:.8cqw 1.1cqw}
+.ubox h4{margin:0 0 .5cqw;font-size:1.7cqw;color:#2fdcf0;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.urow{display:flex;align-items:center;justify-content:space-between;gap:.8cqw;padding:.25cqw 0;min-height:3.5cqw}
+#mUtil input[type=text]{width:15.5cqw}
+.ubtn{white-space:nowrap}
+.urow span{color:#aaa}
+.urow input[type=range]{width:11cqw;accent-color:#2fdcf0}
+.urow .val{min-width:5cqw;text-align:right;color:#fff}
+.ubtn{background:#1c1c1c;border:1px solid #444;color:#ddd;font-size:1.8cqw;padding:.5cqw 1.4cqw;border-radius:2px}
+.ubtn.pri{background:#1e5bff;border-color:#1e5bff;color:#fff}
+.ubtn.warn{border-color:#8a2b25;color:#ff9b93}
+.small{color:#888;font-size:1.8cqw;line-height:1.35}
+.errlist{font:1.8cqw ui-monospace,Menlo,monospace;color:#ff9b93;white-space:pre-wrap;max-height:10cqw;overflow:auto}
+.pnote{color:#888;font-size:1.9cqw;margin-top:1cqw}
+.key.t{background:linear-gradient(#8fb8af,#5f8c83);color:#0e2420}
+.key.lk{display:flex;align-items:center;justify-content:center;gap:5px}
+.key.lk .lki svg{width:16px;height:16px;display:block}
+.key.lk .lkt{transition:color .2s,text-shadow .2s}
+.key.lk.locked .lkt{color:#2fe01a;text-shadow:0 0 6px #46ff2a,0 0 12px #46ff2a99}
+.key.lk.locked .lki{color:#1f9e12}
+.qs{grid-column:1/-1;display:flex;align-items:center;gap:8px;justify-content:center;padding-top:4px}
+.qs span{font-size:11px;font-weight:700;color:#555;margin-right:2px}
+.qs button{border:0;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:700;background:#7a7f86;color:#eee;box-shadow:0 2px 0 #4c5056;display:flex;align-items:center;gap:5px}
+.qs button i{width:7px;height:7px;border-radius:50%;background:#3a3d42}
+.qs button.lit i{background:#46ff2a;box-shadow:0 0 6px #46ff2a}
+
+
+/* ---------- LIST / DELAYER ---------- */
+#ld{position:fixed;inset:0;background:#000a;backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;z-index:18;padding:3vh 12px;overflow:auto}
+#ld.show{display:flex}
+.ldlg{width:min(1180px,100%);background:#0b0c0e;color:#e6e8eb;border:1px solid #3a3d44;border-radius:14px;box-shadow:0 30px 80px #000c;overflow:hidden}
+.ldhead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px;background:linear-gradient(#26282c,#16181b);border-bottom:1px solid #33363d}
+.ldhead b{font-size:16px;letter-spacing:.04em}
+.ldtabs,.ldch{display:inline-flex;border:1px solid #3a3d44;border-radius:8px;overflow:hidden}
+.ldtabs button,.ldch button{background:#15171a;border:0;color:#9aa0a8;padding:7px 14px;font-size:13px;font-weight:600}
+.ldtabs button+button,.ldch button+button{border-left:1px solid #3a3d44}
+.ldtabs button.on{background:#1e5bff;color:#fff}
+.ldch button.on{background:var(--a);color:#06181b}
+.ldhead .x{margin-left:auto;background:none;border:0;color:#9aa0a8;font-size:22px;line-height:1}
+.ldstat{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:10px 16px;border-bottom:1px solid #22252a;font-size:13px;color:#aab0b8}
+.ldstat .st{font-weight:700;letter-spacing:.05em;padding:3px 9px;border-radius:5px;background:#24272c;color:#cfd3da}
+.ldstat .st.run{background:#1f6f34;color:#d8ffe3;box-shadow:0 0 10px #2cc24a66}
+.ldstat .st.err{background:#7a2420;color:#ffd6d2}
+.ldstat b{color:#fff;font-variant-numeric:tabular-nums}
+.ldstat .sp{flex:1}
+.ldbtn{background:#23262b;border:1px solid #3a3d44;color:#e6e8eb;border-radius:8px;padding:8px 13px;font-size:13px;white-space:nowrap}
+.ldbtn:hover{border-color:#566070}
+.ldbtn.pri{background:#1e5bff;border-color:#1e5bff;color:#fff}
+.ldbtn.go{background:#1f7a3a;border-color:#2a9a4b;color:#e9ffef}
+.ldbtn.stop{background:#7a2420;border-color:#9a3029;color:#ffe3df}
+.ldbtn:disabled{opacity:.45}
+.ldbody{display:grid;grid-template-columns:330px 1fr;min-height:420px}
+.ldleft{border-right:1px solid #22252a;padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.ldright{padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ldbox h4{margin:0 0 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#2fdcf0;font-weight:700}
+.ldrow{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:32px;font-size:13px;color:#aab0b8}
+.ldrow>span{flex:1}
+.ldrow input,.ldrow select{background:#111316;border:1px solid #3a3d44;color:#e6e8eb;border-radius:6px;padding:6px 8px;font:13px ui-monospace,Menlo,monospace;width:110px;text-align:right}
+.ldrow select{text-align:left;width:auto;font-family:inherit;max-width:190px}
+.ldrow input[type=checkbox]{width:18px;height:18px;accent-color:#2fdcf0}
+.ldrow .unit{width:18px;color:#7c838d;flex:none;font-size:12px}
+.ldinfo{font-size:12px;color:#8a919c;line-height:1.45;background:#121418;border:1px solid #23262b;border-radius:8px;padding:8px 10px}
+.ldinfo b{color:#e6e8eb}
+.ldbtns{display:flex;flex-wrap:wrap;gap:8px}
+.ldprev{position:relative;height:200px;background:#000;border:1px solid #2a2d33;border-radius:6px}
+.ldprev canvas{position:absolute;inset:0;width:100%;height:100%}
+.ldtable{flex:1;min-height:160px;max-height:340px;overflow:auto;border:1px solid #2a2d33;border-radius:6px}
+.ldtable table{width:100%;border-collapse:collapse;font:13px ui-monospace,Menlo,monospace}
+.ldtable th{position:sticky;top:0;background:#1a1c20;color:#9aa0a8;font:600 11px -apple-system,sans-serif;text-transform:uppercase;letter-spacing:.06em;text-align:right;padding:6px 8px;z-index:1}
+.ldtable td{padding:2px 6px;border-top:1px solid #17191c;text-align:right;color:#cfd3da}
+.ldtable td:first-child,.ldtable th:first-child{color:#6c727c;width:56px}
+.ldtable tr.cur td{background:#1e5bff33}
+.ldtable input{width:100%;max-width:110px;background:transparent;border:1px solid transparent;color:inherit;font:inherit;text-align:right;padding:3px 4px;border-radius:4px}
+.ldtable input:focus{border-color:#4b5566;background:#111316;outline:none}
+.ldtable input[type=checkbox]{width:16px;height:16px;accent-color:#2cc24a}
+.ldfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid #22252a;background:#101114}
+.ldfoot .sp{flex:1}
+.ldfoot select{background:#111316;border:1px solid #3a3d44;color:#e6e8eb;border-radius:8px;padding:7px 8px;font-size:13px}
+.ldmsg{font-size:12px;color:#8a919c;min-height:16px}
+.ldmsg.err{color:#ff8a80}.ldmsg.ok{color:#8ff0b0}
+[data-only]{display:none}
+#ld[data-tab=list] [data-only=list],#ld[data-tab=dly] [data-only=dly]{display:revert}
+.ldrow[data-only]{display:none}
+#ld[data-tab=list] .ldrow[data-only=list],#ld[data-tab=dly] .ldrow[data-only=dly]{display:flex}
+.ldrow.hide{display:none!important}
+@media (max-width:820px){.ldbody{grid-template-columns:1fr}.ldleft{border-right:0;border-bottom:1px solid #22252a}.ldrow input{width:96px}}
+
+/* ---------- Verbindungsdialog ---------- */
+.connbtn{margin-left:auto;display:flex;align-items:center;gap:8px;background:#f6f3ec;border:1px solid #c9c4b8;border-radius:9px;padding:6px 12px;font-size:13px;color:#333;box-shadow:inset 0 1px 0 #fff,0 2px 0 #b9b4a8}
+.connbtn i{width:9px;height:9px;border-radius:50%;background:#c33;display:inline-block}
+.connbtn i.ok{background:#2cc24a;box-shadow:0 0 6px #2cc24a}
+#conn{position:fixed;inset:0;background:#0009;backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;z-index:20;padding:6vh 14px;overflow:auto}
+#conn.show{display:flex}
+.dlg{width:min(560px,100%);background:#16181c;color:#e6e8eb;border:1px solid #3a3d44;border-radius:14px;box-shadow:0 30px 80px #000a;overflow:hidden}
+.dlg h2{margin:0;padding:16px 20px;font-size:17px;border-bottom:1px solid #2c2f36;display:flex;align-items:center;gap:10px}
+.dlg h2 button{margin-left:auto;background:none;border:0;color:#9aa0a8;font-size:20px;line-height:1}
+.dlg section{padding:14px 20px;border-bottom:1px solid #2c2f36}
+.dlg h3{margin:0 0 10px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a919c;font-weight:600;display:flex;align-items:center;gap:8px}
+.dlg h3 span{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400}
+.dlist{display:flex;flex-direction:column;gap:6px}
+.dev{display:flex;align-items:center;gap:12px;padding:10px 12px;background:#1d2026;border:1px solid #2c3038;border-radius:9px;cursor:pointer;text-align:left;color:inherit;width:100%}
+.dev:hover{border-color:#2fdcf0}
+.dev.cur{border-color:#2cc24a}
+.dev b{font:600 14px ui-monospace,Menlo,monospace;min-width:120px}
+.dev small{color:#8a919c;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.dev .x{color:#6c727c;padding:0 4px;flex:none}
+.dev .x:hover{color:#ff6b61}
+.empty{color:#7c838d;font-size:13px;padding:4px 2px}
+.manual{display:flex;gap:8px}
+.manual input{background:#0e1013;border:1px solid #3a3d44;border-radius:8px;padding:9px 10px;color:#e6e8eb;font:14px ui-monospace,Menlo,monospace;min-width:0}
+.manual input#mHost{flex:1}.manual input#mPort{width:76px}
+.dbtn{background:#2a2e35;border:1px solid #3a3d44;color:#e6e8eb;border-radius:8px;padding:9px 14px}
+.dbtn.pri{background:#1e5bff;border-color:#1e5bff;color:#fff}
+.dbtn:disabled{opacity:.5}
+.msg{font-size:13px;margin-top:10px;min-height:18px}
+.msg.err{color:#ff8a80}.msg.ok{color:#8ff0b0}
+.foot{display:flex;gap:8px;padding:14px 20px;flex-wrap:wrap}
+.foot .sp{flex:1}
+.spin{width:12px;height:12px;border:2px solid #555;border-top-color:#2fdcf0;border-radius:50%;animation:sp 0.8s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media (max-width:980px){
+  .device{grid-template-columns:1fr;padding:14px}
+  .panel{grid-template-columns:1fr;}
+  .fn{flex-direction:row;flex-wrap:wrap}.fn .key{flex:1;min-width:70px}
+  .pad{grid-template-columns:repeat(6,1fr)}.pad .key[data-k=OK]{grid-column:span 6}
+}
+@media (max-width:520px){.wrap{padding:8px}.bezel{padding:8px}.model b{font-size:20px}.model span{display:none}.physsoft{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="device">
+  <div class="model"><b>UDP3305S-E</b><span>Programmable DC Power Supply</span><button class="connbtn" id="connBtn" title="Verbindung / Netzteil wählen"><i id="connDot"></i><span id="hostTxt">Verbindung …</span> ▾</button></div>
+
+  <div>
+   <div class="bezel">
+    <div class="screen" id="screen">
+      <div class="status">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9H3z"/><path d="M9 20v-6h6v6"/></svg>
+        <span class="wtitle">:WAVEDISP</span><span class="idn" id="idn"></span><span class="sp"></span>
+        <span class="lan bad" id="lan" title="LAN">
+          <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="22" height="13"/><path d="M14 16v4M7 21h14"/></svg>
+        </span>
+      </div>
+      <div class="main" id="main"><div class="cols" id="cols"><div class="offline">Verbinde mit dem Netzteil …</div></div><div class="wave" id="wave" title="Tippen: Zeitachse ändern"><canvas id="waveC"></canvas></div></div>
+      <div class="soft" id="soft">
+        <div data-s="vset">Spannung</div><div data-s="iset">Strom</div><div data-s="ovp">OVP</div><div data-s="ocp">OCP</div><div data-s="zoom" id="softZoom">Zoom</div>
+      </div>
+
+      <div class="menu" id="mPre">
+        <div class="mhead"><b>PRESET</b><div class="tabs" id="preTabs"></div><button class="x" data-close>×</button></div>
+        <div class="mbody">
+          <table class="ptab"><thead><tr><th>Kanal</th><th>Spannung</th><th>Strom</th><th>OVP</th><th>OCP</th></tr></thead><tbody id="preRows"></tbody></table>
+          <div class="pnote" id="preNote">Werte ändern → „Speichern“ schreibt die Gruppe ins Netzteil · „Anwenden“ übernimmt sie als aktuelle Einstellung.</div>
+        </div>
+        <div class="mfoot"><button id="preRead">Lesen</button><button id="preTake">Aktuelle übernehmen</button><button id="preSave">Speichern</button><button id="preApply" class="pri">Anwenden</button><button data-close>Zurück</button></div>
+      </div>
+      <div class="menu" id="mUtil">
+        <div class="mhead"><b>UTILITY</b><button class="x" data-close>×</button></div>
+        <div class="mbody"><div class="ugrid">
+          <div class="ucol"><div class="ubox"><h4>System</h4>
+            <div class="urow"><span>Signalton</span><label class="tg"><input type="checkbox" id="uBeep"><i></i></label></div>
+            <div class="urow"><span>Helligkeit</span><input type="range" id="uBright" min="1" max="100"><span class="val" id="uBrightV">–</span></div>
+            <div class="urow"><span>Tastensperre</span><label class="tg"><input type="checkbox" id="uLock"><i></i></label></div>
+            <div class="urow"><span title="Nur per Befehl oder Neustart lösbar">Fernsperre</span><label class="tg"><input type="checkbox" id="uKlock"><i></i></label></div>
+          </div>
+          <div class="ubox"><h4>RS232</h4>
+            <div class="urow"><span>Baudrate</span><select id="uBaud">
+              <option>4800</option><option>7200</option><option>9600</option><option>14400</option><option>19200</option><option>38400</option><option>57600</option><option>115200</option><option>128000</option></select></div>
+          </div></div>
+          <div class="ubox"><h4>LAN</h4>
+            <div class="urow"><span>DHCP</span><label class="tg"><input type="checkbox" id="uDhcp"><i></i></label></div>
+            <div class="urow"><span>IP-Adresse</span><input type="text" id="uIp" spellcheck="false"></div>
+            <div class="urow"><span>Subnetzmaske</span><input type="text" id="uMask" spellcheck="false"></div>
+            <div class="urow"><span>Gateway</span><input type="text" id="uGw" spellcheck="false"></div>
+            <div class="urow"><span class="small">erst nach „Übernehmen“ aktiv</span><button class="ubtn pri" id="uLanApply">Übernehmen</button></div>
+          </div>
+          <div class="ubox"><h4>Info &amp; Wartung</h4>
+            <div class="urow"><span>Gerät</span><span class="val small" id="uIdn" style="text-align:right">–</span></div>
+            <div class="urow"><span>SCPI-Version</span><span class="val" id="uVer">–</span></div>
+            <div class="urow"><span>Fehlerspeicher</span><span><span class="val" id="uErrN">–</span>&nbsp; <button class="ubtn" id="uErrRead">Auslesen</button></span></div>
+            <div class="errlist" id="uErrs"></div>
+            <div class="urow"><button class="ubtn" id="uTst">Selbsttest</button><button class="ubtn warn" id="uRst">Werkseinstellung</button></div>
+          </div>
+        </div></div>
+        <div class="mfoot"><button id="uRead">Neu lesen</button><button data-close>Zurück</button></div>
+      </div>
+      <div class="overlay" id="store">
+        <h3>Speicher (STORAGE)</h3>
+        <div class="slots" id="slots"></div>
+        <div class="ovbtns"><button id="stSave">Speichern</button><button id="stLoad" class="pri">Laden</button><button id="stEsc">ESC</button></div>
+      </div>
+    </div>
+   </div>
+   <div class="physsoft" id="physsoft">
+     <button data-s="vset"></button><button data-s="iset"></button><button data-s="ovp"></button><button data-s="ocp"></button><button data-s="zoom"></button>
+   </div>
+  </div>
+
+  <div class="panel">
+    <div class="fn">
+      <button class="key g" id="kWave">WAVE</button>
+      <button class="key g" id="kSer">SER</button>
+      <button class="key g" id="kPara">PARA</button>
+      <button class="key g" id="kList" style="font-size:11px">LIST<br>DELAYER</button>
+      <button class="key g" id="kStore">STORAGE</button>
+      <button class="key t" id="kPreset">PRESET</button>
+      <button class="key" id="kUtil">UTILITY</button>
+      <button class="key lk" id="kLock" title="Tastensperre am Netzteil ein/aus"><span class="lki"></span><span class="lkt">LOCK</span></button>
+    </div>
+    <div class="pad" id="pad">
+      <button class="key">7</button><button class="key">8</button><button class="key">9</button>
+      <button class="key">4</button><button class="key">5</button><button class="key">6</button>
+      <button class="key">1</button><button class="key">2</button><button class="key">3</button>
+      <button class="key">.</button><button class="key">0</button><button class="key">ESC</button>
+      <button class="key" data-k="BS">←</button><button class="key" data-k="DN">▼</button><button class="key" data-k="UP">▲</button>
+      <button class="key g" data-k="OK" style="grid-column:1/-1">OK</button>
+    </div>
+    <div class="chrow" id="chrow">
+      <button class="key k1" data-sel="0">CH1</button><button class="key k2" data-sel="1">CH2</button><button class="key k3" data-sel="2">CH3</button>
+      <button class="key" data-out="0">ON<br>OFF</button><button class="key" data-out="1">ON<br>OFF</button><button class="key" data-out="2">ON<br>OFF</button>
+      <button class="key all" id="kAll">ALL<br>ON/OFF</button>
+      <div class="qs" id="qs"><span>CH3</span><button data-q="1.8"><i></i>1.8V</button><button data-q="2.5"><i></i>2.5V</button><button data-q="3.3"><i></i>3.3V</button><button data-q="5"><i></i>5V</button></div>
+    </div>
+  </div>
+ </div>
+
+ <div class="hint">Wert anklicken (oder Softkey) → Zahl tippen → Enter. Mausrad über einem Wert = Drehknopf (⌥ fein). Kästchen schaltet OVP/OCP ein/aus. Klick auf Wh/W wechselt die Anzeige. WAVE zeigt den Verlauf, Klick ins Diagramm ändert die Zeitachse.</div>
+
+ <section id="console">
+  <details>
+    <summary>SCPI-Konsole &amp; Protokoll</summary>
+    <div class="cbody">
+      <div class="crow"><input id="cmd" placeholder="z. B. *IDN?  oder  :MEASure:ALL? CH1" autocomplete="off" spellcheck="false"><button id="send">Senden</button></div>
+      <div id="log"></div>
+    </div>
+  </details>
+ </section>
+</div>
+<div id="ld" data-tab="list"><div class="ldlg">
+  <div class="ldhead">
+    <b>LIST / DELAYER</b>
+    <div class="ldtabs"><button data-tab="list" class="on">LIST</button><button data-tab="dly">DELAYER</button></div>
+    <div class="ldch" id="ldCh"></div>
+    <button class="x" id="ldClose" title="Schließen">×</button>
+  </div>
+  <div class="ldstat">
+    <span class="st" id="ldSt">–</span>
+    <span>Punkt <b id="ldPt">–</b></span>
+    <span>Restzeit <b id="ldRest">–</b></span>
+    <span>Wiederholungen übrig <b id="ldCyc">–</b></span>
+    <span class="sp"></span>
+    <button class="ldbtn go" id="ldStart">▶ Start</button>
+    <button class="ldbtn stop" id="ldStop">■ Stop</button>
+  </div>
+  <div class="ldbody">
+    <div class="ldleft">
+      <!-- LIST: Vorlage -->
+      <div class="ldbox" data-only="list">
+        <h4>Kurve erzeugen</h4>
+        <div class="ldrow"><span>Vorlage</span><select id="lTpl">
+          <option value="SINE">Sinus</option><option value="PULSE">Puls / Rechteck</option><option value="RAMP">Rampe / Dreieck</option>
+          <option value="UP">Treppe aufwärts</option><option value="DN">Treppe abwärts</option><option value="UPDN">Treppe auf und ab</option>
+          <option value="RISE">Exponentiell steigend</option><option value="FALL">Exponentiell fallend</option></select></div>
+        <div class="ldrow"><span>Verändern</span><select id="lObj"><option value="V">Spannung</option><option value="C">Strom</option></select></div>
+        <div class="ldrow"><span>Minimum</span><input id="lMin" type="number" step="0.01" value="0"><span class="unit" data-u="obj">V</span></div>
+        <div class="ldrow"><span>Maximum</span><input id="lMax" type="number" step="0.01" value="5"><span class="unit" data-u="obj">V</span></div>
+        <div class="ldrow"><span id="lFixLbl">Strombegrenzung</span><input id="lFix" type="number" step="0.001" value="1"><span class="unit" data-u="fix">A</span></div>
+        <div class="ldrow"><span>Punkte</span><input id="lPts" type="number" step="1" min="2" max="2048" value="20"><span class="unit"></span></div>
+        <div class="ldrow"><span>Zeit pro Punkt</span><input id="lDt" type="number" step="0.1" min="0.1" value="0.1"><span class="unit">s</span></div>
+        <div class="ldrow" id="lRowInv"><span>Invertieren</span><input id="lInv" type="checkbox"><span class="unit"></span></div>
+        <div class="ldrow" id="lRowDuty"><span>Tastverhältnis</span><input id="lDuty" type="number" step="1" min="1" max="99" value="50"><span class="unit">%</span></div>
+        <div class="ldrow" id="lRowSym"><span>Symmetrie</span><input id="lSym" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div>
+        <div class="ldrow" id="lRowExp"><span>Exponent</span><input id="lExp" type="number" step="1" min="0" max="10" value="5"><span class="unit"></span></div>
+        <div class="ldinfo" id="lInfo"></div>
+        <div class="ldbtns" style="margin-top:8px"><button class="ldbtn pri" id="lGen">Kurve in Tabelle übernehmen</button></div>
+      </div>
+      <!-- DELAYER: Erzeugen -->
+      <div class="ldbox" data-only="dly">
+        <h4>Ablauf erzeugen</h4>
+        <div class="ldrow"><span>Art</span><select id="dMode">
+          <option value="FIX1">Ein/Aus im Wechsel (beginnt Ein)</option><option value="FIX0">Aus/Ein im Wechsel (beginnt Aus)</option>
+          <option value="INC">Zeiten steigend</option><option value="DEC">Zeiten fallend</option></select></div>
+        <div class="ldrow"><span>Punkte</span><input id="dPts" type="number" step="1" min="1" max="2048" value="10"><span class="unit"></span></div>
+        <div class="ldrow" id="dRowOn"><span>Ein-Zeit</span><input id="dOn" type="number" step="0.1" min="0.1" value="5"><span class="unit">s</span></div>
+        <div class="ldrow" id="dRowOff"><span>Aus-Zeit</span><input id="dOff" type="number" step="0.1" min="0.1" value="10"><span class="unit">s</span></div>
+        <div class="ldrow" id="dRowBase"><span>Startzeit</span><input id="dBase" type="number" step="0.1" min="0.1" value="1"><span class="unit">s</span></div>
+        <div class="ldrow" id="dRowStep"><span>Schritt</span><input id="dStep" type="number" step="0.1" min="0" value="0.5"><span class="unit">s</span></div>
+        <div class="ldinfo" id="dInfo"></div>
+        <div class="ldbtns" style="margin-top:8px"><button class="ldbtn pri" id="dGen">In Tabelle übernehmen</button></div>
+      </div>
+      <!-- gemeinsamer Ablauf -->
+      <div class="ldbox">
+        <h4>Ablauf</h4>
+        <div class="ldrow"><span>Startgruppe</span><input id="aStart" type="number" step="1" min="0" max="2047" value="0"><span class="unit"></span></div>
+        <div class="ldrow"><span>Wiederholungen</span><input id="aCyc" type="number" step="1" min="1" max="99999" value="1"><span class="unit"></span></div>
+        <div class="ldrow"><span>Am Ende</span><select id="aEnd"></select></div>
+        <div class="ldrow" data-only="dly"><span>Abbruch wenn</span><select id="dStop">
+          <option value="NONE">nie</option><option value="&gt;V">Spannung &gt;</option><option value="&lt;V">Spannung &lt;</option>
+          <option value="&gt;C">Strom &gt;</option><option value="&lt;C">Strom &lt;</option><option value="&gt;P">Leistung &gt;</option><option value="&lt;P">Leistung &lt;</option></select></div>
+        <div class="ldrow" data-only="dly" id="dRowStopV"><span>Grenzwert</span><input id="dStopV" type="number" step="0.01" min="0" value="1"><span class="unit" id="dStopU">A</span></div>
+        <div class="ldrow" data-only="list"><span>Ausgang beim Start einschalten</span><input id="aOn" type="checkbox" checked><span class="unit"></span></div>
+      </div>
+    </div>
+    <div class="ldright">
+      <div class="ldprev"><canvas id="ldCv"></canvas></div>
+      <div class="ldbtns">
+        <button class="ldbtn" id="tAdd">+ Zeile</button><button class="ldbtn" id="tDel">− letzte Zeile</button><button class="ldbtn" id="tClr">Tabelle leeren</button>
+        <span class="ldmsg" id="ldMsg" style="align-self:center"></span>
+      </div>
+      <div class="ldtable"><table><thead id="tHead"></thead><tbody id="tBody"></tbody></table></div>
+    </div>
+  </div>
+  <div class="ldfoot">
+    <button class="ldbtn" id="ldRead">Vom Gerät lesen</button>
+    <button class="ldbtn pri" id="ldSend">Ans Gerät senden</button>
+    <span class="sp"></span>
+    <span style="font-size:13px;color:#9aa0a8">Speicher</span>
+    <select id="ldSlot"></select>
+    <button class="ldbtn" id="ldSave">Speichern</button>
+    <button class="ldbtn" id="ldLoad">Laden</button>
+  </div>
+</div></div>
+<div id="conn"><div class="dlg">
+  <h2>Netzteil verbinden <button id="cClose" title="Schließen">×</button></h2>
+  <section>
+    <h3>Im Netzwerk gefunden <span id="scanInfo"></span></h3>
+    <div class="dlist" id="found"><div class="empty">Noch nicht gesucht.</div></div>
+    <div style="margin-top:10px"><button class="dbtn" id="scanBtn">Netzwerk durchsuchen</button></div>
+  </section>
+  <section>
+    <h3>Zuletzt verwendet</h3>
+    <div class="dlist" id="recent"><div class="empty">–</div></div>
+  </section>
+  <section>
+    <h3>IP-Adresse manuell</h3>
+    <div class="manual"><input id="mHost" placeholder="z. B. 192.168.0.137" inputmode="decimal" autocomplete="off" spellcheck="false"><input id="mPort" value="5025" inputmode="numeric" title="SCPI-Port"><button class="dbtn pri" id="mGo">Verbinden</button></div>
+    <div class="msg" id="cMsg"></div>
+  </section>
+  <div class="foot"><button class="dbtn" id="cSim">Simulator (ohne Gerät)</button><span class="sp"></span><button class="dbtn" id="cQuit">App beenden</button></div>
+</div></div>
+<div id="toast"></div>
+
+<script>
+const COLOR = {CH1:'var(--c1)', CH2:'var(--c2)', CH3:'var(--c3)', SER:'var(--c1)', PARA:'var(--c1)'};
+const DEC   = {vset:2, iset:3, ovp:2, ocp:3};
+const UNIT  = {vset:'V', iset:'A', ovp:'V', ocp:'A'};
+const STEP  = {vset:[0.1,0.01], iset:[0.01,0.001], ovp:[0.1,0.01], ocp:[0.01,0.001]};
+const POLL_MS = 500;
+
+let st=null, cols={}, sel=0, focus=null, buf=null, zoom=false, wave=false, forceFull=true, pollN=0;
+let hist={}; const TIMEBASES=[30,120,600]; let tbIdx=0;
+let pend={}, pendT={}, energy={}, lastT={}, prevOut={}, showW=false, slot=1;
+
+const $=s=>document.querySelector(s);
+const pad=(x,int,dec)=>{ if(x==null||isNaN(x)) return '--'; let s=Number(x).toFixed(dec); const [a,b]=s.split('.'); return a.padStart(int,'0')+(b!==undefined?'.'+b:''); };
+
+/* ---------- Protokoll / API ---------- */
+function log(m,c='s'){const el=$('#log'),d=document.createElement('div');d.className=c;d.textContent=new Date().toLocaleTimeString()+'  '+m;el.appendChild(d);while(el.children.length>300)el.firstChild.remove();el.scrollTop=el.scrollHeight;}
+let tT;function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(tT);tT=setTimeout(()=>t.style.display='none',5000);log(m,'e');}
+async function api(body){
+  try{
+    const r=await fetch('/api/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json();
+    if(!j.ok) toast('Fehler: '+j.error); else if(j.reply&&body.action!=='scpi') toast('Gerät meldet: '+j.reply);
+    forceFull=true; return j;
+  }catch(e){toast('Keine Verbindung zum Mac-Server: '+e.message);}
+}
+const setParam=(ch,p,v)=>{log(`${ch} ${p} = ${v}`);return api({ch,param:p,value:v});};
+
+/* ---------- Spalten ---------- */
+function build(){
+  const box=$('#cols'); box.innerHTML=''; cols={};
+  st.channels.forEach((d,idx)=>{
+    const el=document.createElement('div'); el.className='col'; el.style.setProperty('--a',COLOR[d.ch]);
+    el.innerHTML=`
+      <div class="head"><span>${d.ch}</span><span data-k="on">Off</span><span data-k="cv">CV</span></div>
+      <div class="meas">
+        <div class="row"><span class="n" data-k="v">00.00</span><span class="u">V</span></div>
+        <div class="row"><span class="n" data-k="i">0.000</span><span class="u">A</span></div>
+        <div class="row e" data-k="erow"><span class="n" data-k="e">0.000</span><span class="u" data-k="eu">Wh</span></div>
+      </div>
+      <div class="set">
+        <div><h5>Setzen</h5>
+          <div class="f" data-p="vset"><span class="v">--</span><small>V</small></div>
+          <div class="f" data-p="iset"><span class="v">--</span><small>A</small></div></div>
+        <div><h5>Grenze</h5>
+          <div class="f" data-p="ovp"><span class="v">--</span><small>V</small><span class="cb" data-sw="ovp_on"></span></div>
+          <div class="f" data-p="ocp"><span class="v">--</span><small>A</small><span class="cb" data-sw="ocp_on"></span></div></div>
+      </div>`;
+    const q=k=>el.querySelector(`[data-k="${k}"]`);
+    const c={el,ch:d.ch,idx,on:q('on'),cv:q('cv'),v:q('v'),i:q('i'),e:q('e'),eu:q('eu'),f:{},sw:{}};
+    el.querySelectorAll('.f').forEach(f=>{
+      c.f[f.dataset.p]=f;
+      f.addEventListener('click',ev=>{ if(ev.target.classList.contains('cb')) return; ev.stopPropagation(); setFocus(idx,f.dataset.p); });
+      f.addEventListener('wheel',ev=>{ ev.preventDefault(); setFocus(idx,f.dataset.p,true); nudge(ev.deltaY<0?1:-1, ev.altKey); },{passive:false});
+    });
+    el.querySelectorAll('.cb').forEach(b=>{ c.sw[b.dataset.sw]=b;
+      b.addEventListener('click',ev=>{ ev.stopPropagation(); const on=!b.classList.contains('on'); b.classList.toggle('on',on); setParam(d.ch,b.dataset.sw,on); }); });
+    q('erow').addEventListener('click',ev=>{ev.stopPropagation();showW=!showW;render();});
+    el.addEventListener('click',()=>{ sel=idx; if(focus&&focus.idx!==idx){cancelEdit();} render(); });
+    box.appendChild(el); cols[d.ch]=c;
+  });
+  box.dataset.layout=st.channels.map(c=>c.ch).join();
+}
+
+function setFocus(idx,p,keepBuf){
+  if(!keepBuf||!focus||focus.idx!==idx||focus.p!==p) buf=null;
+  sel=idx; focus={idx,p}; render();
+}
+function cancelEdit(){ buf=null; focus=null; render(); }
+function curVal(c,p){ return pend[c.ch+p]!=null ? pend[c.ch+p] : st.channels[c.idx][p]; }
+
+function commitBuf(){
+  if(!focus||buf==null) return;
+  const d=st.channels[focus.idx]; const v=parseFloat(buf.replace(',','.'));
+  buf=null;
+  if(isNaN(v)){toast('Ungültige Zahl');render();return;}
+  pend[d.ch+focus.p]=v; setParam(d.ch,focus.p,v).then(()=>{delete pend[d.ch+focus.p];});
+  render();
+}
+function nudge(dir,fine){
+  if(!focus||!st) return;
+  const d=st.channels[focus.idx], c=cols[d.ch], p=focus.p, key=d.ch+p;
+  buf=null;
+  const max = (p==='vset'||p==='ovp') ? d.limits.v*(p==='ovp'?1.1:1) : d.limits.i*(p==='ocp'?1.1:1);
+  let v=(curVal(c,p)||0)+dir*STEP[p][fine?1:0];
+  v=Math.min(max,Math.max(0,+v.toFixed(DEC[p])));
+  pend[key]=v; render();
+  clearTimeout(pendT[key]);
+  pendT[key]=setTimeout(()=>setParam(d.ch,p,v).then(()=>{ if(pend[key]===v) delete pend[key]; }),280);
+}
+
+/* ---------- Darstellung ---------- */
+function render(){
+  if(!st) return;
+  if($('#cols').dataset.layout!==st.channels.map(c=>c.ch).join()) build();
+  if(sel>=st.channels.length) sel=0;
+  $('#cols').classList.toggle('zoom',zoom&&!wave);
+  $('#main').classList.toggle('wavemode',wave); $('#screen').classList.toggle('wavemode',wave);
+  $('#softZoom').textContent = wave ? 'Normal' : 'Zoom';
+  const now=performance.now();
+  st.channels.forEach((d,idx)=>{
+    const c=cols[d.ch];
+    c.el.style.display = ((zoom||wave) && idx!==sel) ? 'none' : '';
+    c.el.classList.toggle('on',d.out); c.el.classList.toggle('sel',idx===sel);
+    c.on.textContent=d.out?'On':'Off';
+    c.cv.textContent=d.cvcc||'CV'; c.cv.className = d.cvcc==='CC'?'cc':'';
+    c.v.textContent=pad(d.meas.v,2,2); c.i.textContent=pad(d.meas.i,1,3);
+    if(showW){ c.e.textContent=pad(d.meas.p,2,2); c.eu.textContent='W'; }
+    else { c.e.textContent=(energy[d.ch]||0).toFixed(3); c.eu.textContent='Wh'; }
+    for(const p of ['vset','iset','ovp','ocp']){
+      const f=c.f[p], isF=focus&&focus.idx===idx&&focus.p===p;
+      f.classList.toggle('focus',isF); f.classList.toggle('edit',isF&&buf!=null);
+      f.classList.toggle('pend',pend[d.ch+p]!=null);
+      f.querySelector('.v').textContent = (isF&&buf!=null) ? (buf||'_') : pad(curVal(c,p),1,DEC[p]);
+    }
+    c.sw.ovp_on.classList.toggle('on',d.ovp_on); c.sw.ocp_on.classList.toggle('on',d.ocp_on);
+  });
+  document.querySelectorAll('[data-s]').forEach(s=>s.classList&&s.classList.toggle('act', s.dataset.s==='zoom'?(zoom&&!wave):(focus&&focus.idx===sel&&focus.p===s.dataset.s)));
+  // Tastenfeld
+  const outs=[...document.querySelectorAll('[data-out]')], sels=[...document.querySelectorAll('[data-sel]')];
+  const map=chanKeys();
+  outs.forEach((b,k)=>{const d=map[k]; b.classList.toggle('lit',!!(d&&d.out)); b.disabled=!d; b.style.opacity=d?1:.4;});
+  sels.forEach((b,k)=>{const d=map[k]; b.classList.toggle('act',!!d&&st.channels.indexOf(d)===sel); b.disabled=!d; b.style.opacity=d?1:.4;});
+  paintQs();
+  $('#kSer').classList.toggle('lit',st.mode.startsWith('SER'));
+  $('#kPara').classList.toggle('lit',st.mode.startsWith('PARA'));
+  $('#kWave').classList.toggle('lit',wave);
+  paintLock(st.lock);
+  if(wave) drawWave();
+}
+/* CH-Tasten 1..3 auf Kanaele abbilden (SER/PARA belegen CH1+CH2) */
+function chanKeys(){
+  const by=Object.fromEntries(st.channels.map(d=>[d.ch,d]));
+  if(by.SER) return [by.SER,by.SER,by.CH3];
+  if(by.PARA) return [by.PARA,by.PARA,by.CH3];
+  return [by.CH1,by.CH2,by.CH3];
+}
+function integrate(){
+  const now=performance.now();
+  const tnow=Date.now()/1000;
+  st.channels.forEach(d=>{ const h=hist[d.ch]||(hist[d.ch]=[]); h.push([tnow,d.meas.v,d.meas.i,d.meas.p]);
+    while(h.length && h[0][0]<tnow-TIMEBASES[TIMEBASES.length-1]-5) h.shift(); });
+  st.channels.forEach(d=>{
+    if(d.out && !prevOut[d.ch]) energy[d.ch]=0;            // Zaehler beim Einschalten zuruecksetzen
+    if(d.out && lastT[d.ch]) energy[d.ch]=(energy[d.ch]||0)+d.meas.p*(now-lastT[d.ch])/3.6e6;
+    lastT[d.ch]=now; prevOut[d.ch]=d.out;
+  });
+}
+
+/* ---------- Polling ---------- */
+async function poll(){
+  if(!document.getElementById('cols')) return;
+  const full=forceFull||(pollN++%6===0); forceFull=false;
+  try{
+    const j=await (await fetch('/api/state'+(full?'?full=1':''),{cache:'no-store'})).json();
+    $('#hostTxt').textContent=j.host||'kein Gerät gewählt'; $('#connDot').className=j.ok?'ok':'';
+    if(j.ok) everOk=true; else failN++;
+    if(!autoOpened && (j.setup || (!everOk && failN>=3))){ autoOpened=true; openConn(true); }
+    if(j.ok){ st=j; integrate(); render(); $('#lan').className='lan ok'; $('#idn').textContent=j.idn||''; }
+    else{ $('#lan').className='lan bad'; $('#idn').textContent='keine Verbindung';
+      if(!st) $('#cols').innerHTML = j.setup ? `<div class="offline">Kein Netzteil ausgewählt.<br><br><small>Oben rechts auf „Verbindung“ klicken.</small></div>` : `<div class="offline">Netzteil ${j.host} nicht erreichbar<br><br><small>${j.error}</small></div>`; }
+  }catch(e){ $('#lan').className='lan bad'; $('#idn').textContent='Mac-Server läuft nicht'; }
+  setTimeout(poll,POLL_MS);
+}
+
+/* ---------- Bedienung ---------- */
+function soft(s){
+  if(!st) return;
+  if(s==='zoom'){ if(wave){ wave=false; } else zoom=!zoom; render(); return; }
+  setFocus(sel,s);
+}
+document.querySelectorAll('#soft [data-s], #physsoft [data-s]').forEach(b=>b.addEventListener('click',()=>soft(b.dataset.s)));
+
+function key(k){
+  if(k==='ESC'){ $('#store').classList.remove('show'); closeMenus(); cancelEdit(); return; }
+  if(!focus) return;
+  if(k==='OK'){ commitBuf(); return; }
+  if(k==='UP'||k==='DN'){ nudge(k==='UP'?1:-1,false); return; }
+  if(k==='BS'){ if(buf!=null){ buf=buf.slice(0,-1); render(); } return; }
+  if(/^[0-9.]$/.test(k)){ if(buf==null) buf=''; if(k==='.'&&buf.includes('.')) return; if(buf.length<7) buf+=k; render(); }
+}
+document.querySelectorAll('#pad .key').forEach(b=>b.addEventListener('click',()=>key(b.dataset.k||b.textContent.trim())));
+document.addEventListener('keydown',e=>{
+  if(['INPUT','SELECT'].includes(e.target.tagName) || $('#conn').classList.contains('show') || $('#ld').classList.contains('show') || document.querySelector('.menu.show')) return;
+  const m={Enter:'OK',Escape:'ESC',Backspace:'BS',ArrowUp:'UP',ArrowDown:'DN',',':'.'};
+  const k=m[e.key]||e.key;
+  if(/^[0-9.]$/.test(k)||['OK','ESC','BS','UP','DN'].includes(k)){
+    if(k==='UP'||k==='DN'){ if(!focus) return; e.preventDefault(); nudge(k==='UP'?1:-1,e.altKey); return; }
+    if(focus||k==='ESC'){ e.preventDefault(); key(k); }
+  }
+  if(!focus && ['1','2','3'].includes(e.key)===false && e.key==='Tab'){}
+});
+document.addEventListener('click',e=>{ if(!e.target.closest('.screen')&&!e.target.closest('.panel')&&!e.target.closest('.physsoft')) cancelEdit(); });
+
+document.querySelectorAll('[data-sel]').forEach(b=>b.addEventListener('click',()=>{const d=chanKeys()[+b.dataset.sel]; if(d){ sel=st.channels.indexOf(d); cancelEdit(); }}));
+document.querySelectorAll('[data-out]').forEach(b=>b.addEventListener('click',()=>{const d=chanKeys()[+b.dataset.out]; if(d){ d.out=!d.out; render(); setParam(d.ch,'out',d.out);} }));
+$('#kAll').onclick=()=>{ if(!st) return; const any=st.channels.some(d=>d.out); log('Alle Ausgänge '+(any?'AUS':'EIN')); st.channels.forEach(d=>d.out=!any); render(); api({action:'all_out',on:!any}); };
+async function mode(m){
+  const target = st.mode.startsWith(m) ? 'NORMAL' : m;
+  const names={NORMAL:'Unabhängig',SER:'Seriell',PARA:'Parallel'};
+  if(!confirm(`Betriebsart auf „${names[target]}“ umschalten?\nAusgänge sollten vorher aus sein.`)) return;
+  log('Modus → '+target); cancelEdit(); await api({action:'mode',mode:target}); sel=0;
+}
+$('#kSer').onclick=()=>st&&mode('SER');
+$('#kPara').onclick=()=>st&&mode('PARA');
+const LOCK_SVG={on:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',off:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/></svg>'};
+function paintLock(on){ const k=$('#kLock'); k.classList.toggle('locked',!!on);
+  k.querySelector('.lki').innerHTML = on?LOCK_SVG.on:LOCK_SVG.off;
+  k.title = on===null||on===undefined ? 'Tastensperre am Netzteil' : (on?'Tastensperre aktiv – klicken zum Entsperren':'Tasten frei – klicken zum Sperren'); }
+paintLock(false);
+$('#kLock').onclick=async()=>{ if(!st) return toast('Kein Netzteil verbunden');
+  const on=!st.lock; log(on?'Tastensperre am Netzteil EIN':'Tastensperre am Netzteil AUS');
+  paintLock(on); st.lock=on;
+  const j=await api({action:'lock',on}); if(j&&j.ok&&j.lock!=null){ st.lock=j.lock; paintLock(j.lock); } };
+
+/* Speicher */
+for(let i=1;i<=10;i++){ const b=document.createElement('button'); b.textContent=i; b.onclick=()=>{slot=i;paintSlots();}; $('#slots').appendChild(b); }
+function paintSlots(){ [...$('#slots').children].forEach((b,i)=>b.classList.toggle('s',i+1===slot)); }
+paintSlots();
+$('#kStore').onclick=()=>{ closeMenus(); $('#store').classList.toggle('show'); };
+$('#stEsc').onclick=()=>$('#store').classList.remove('show');
+$('#stSave').onclick=()=>{ log('Speichern auf Platz '+slot); api({action:'save',slot}); $('#store').classList.remove('show'); };
+$('#stLoad').onclick=()=>{ log('Laden von Platz '+slot); api({action:'recall',slot}); $('#store').classList.remove('show'); };
+
+/* Konsole */
+const ch=[];let hi=0;
+async function sendCmd(){ const cmd=$('#cmd').value.trim(); if(!cmd) return; ch.push(cmd); hi=ch.length; $('#cmd').value=''; log('> '+cmd);
+  const j=await api({action:'scpi',cmd}); if(j&&j.ok) log(j.reply==null?'(ok)':j.reply, j.reply&&!cmd.includes('?')?'e':'r'); }
+$('#send').onclick=sendCmd;
+$('#cmd').addEventListener('keydown',e=>{ if(e.key==='Enter') sendCmd(); if(e.key==='ArrowUp'&&hi>0){$('#cmd').value=ch[--hi];e.preventDefault();} if(e.key==='ArrowDown'){hi=Math.min(ch.length,hi+1);$('#cmd').value=ch[hi]||'';} });
+
+/* ---------- gemeinsame Helfer fuer Menues ---------- */
+const lastNum=t=>{ const m=String(t||'').match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/g); return m?parseFloat(m[m.length-1]):null; };
+const isOn=t=>/^\s*(ON|1)\b/i.test(String(t||''));
+const unq=t=>String(t||'').trim().replace(/^"|"$/g,'');
+async function batch(cmds,quiet){
+  try{
+    const r=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmds})});
+    const j=await r.json();
+    if(!j.ok){ if(!quiet) toast('Fehler: '+j.error); return null; }
+    if(j.error) toast('Gerät meldet: '+j.error);
+    if(cmds.some(c=>!c.includes('?'))){ forceFull=true; cmds.filter(c=>!c.includes('?')).forEach(c=>log('> '+c)); }
+    return j.replies;
+  }catch(e){ toast('Keine Verbindung zum Mac-Server'); return null; }
+}
+async function q1(cmd){ const r=await batch([cmd],true); return r?r[0]:null; }
+function openMenu(id){ document.querySelectorAll('.menu').forEach(m=>m.classList.toggle('show',m.id===id)); $('#store').classList.remove('show'); cancelEdit(); }
+function closeMenus(){ document.querySelectorAll('.menu').forEach(m=>m.classList.remove('show')); }
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeMenus);
+
+/* ---------- PRESET ---------- */
+let preG=1;
+for(let g=1;g<=5;g++){ const b=document.createElement('button'); b.textContent='P'+g; b.onclick=()=>{preG=g;paintTabs();preRead();}; $('#preTabs').appendChild(b); }
+function paintTabs(){ [...$('#preTabs').children].forEach((b,i)=>b.classList.toggle('on',i+1===preG)); }
+const preChans=()=> st ? st.channels.map(c=>c.ch) : ['CH1','CH2','CH3'];
+function preBuild(){
+  const tb=$('#preRows'); tb.innerHTML='';
+  preChans().forEach(ch=>{
+    const tr=document.createElement('tr'); tr.dataset.ch=ch; tr.style.setProperty('--a',COLOR[ch]);
+    tr.innerHTML=`<td>${ch}</td>
+      <td><input type="number" step="0.01" min="0" data-k="v"> V</td>
+      <td><input type="number" step="0.001" min="0" data-k="i"> A</td>
+      <td><label class="tg"><input type="checkbox" data-k="ovp_on"><i></i></label> <input type="number" step="0.01" min="0" data-k="ovp"> V</td>
+      <td><label class="tg"><input type="checkbox" data-k="ocp_on"><i></i></label> <input type="number" step="0.001" min="0" data-k="ocp"> A</td>`;
+    tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',()=>i.classList.add('dirty')));
+    tb.appendChild(tr);
+  });
+}
+function preFill(ch,d,dirty){
+  const tr=$(`#preRows tr[data-ch="${ch}"]`); if(!tr) return;
+  const set=(k,v,dec)=>{ const i=tr.querySelector(`[data-k="${k}"]`); if(i.type==='checkbox') i.checked=!!v; else i.value=v==null?'':Number(v).toFixed(dec); i.classList.toggle('dirty',!!dirty); };
+  set('v',d.v,2); set('i',d.i,3); set('ovp',d.ovp,2); set('ocp',d.ocp,3); set('ovp_on',d.ovp_on); set('ocp_on',d.ocp_on);
+}
+async function preRead(){
+  preBuild(); paintTabs();
+  const chans=preChans(), g=preG, cmds=[];
+  chans.forEach(ch=>cmds.push(`:PRESet${g}:SET:VOLTage? ${ch}`,`:PRESet${g}:SET:CURRent? ${ch}`,`:PRESet${g}:SET:OVP? ${ch}`,`:PRESet${g}:SET:OCP? ${ch}`));
+  $('#preNote').textContent='Lese Preset P'+g+' …';
+  const r=await batch(cmds); if(!r){ $('#preNote').textContent='Preset konnte nicht gelesen werden.'; return; }
+  chans.forEach((ch,k)=>{ const o=r.slice(k*4,k*4+4);
+    preFill(ch,{v:lastNum(o[0]),i:lastNum(o[1]),ovp_on:isOn(o[2]),ovp:lastNum(o[2]),ocp_on:isOn(o[3]),ocp:lastNum(o[3])}); });
+  $('#preNote').textContent=`P${g} gelesen. Werte ändern → „Speichern“ schreibt die Gruppe ins Netzteil · „Anwenden“ übernimmt sie als aktuelle Einstellung.`;
+}
+async function preSave(){
+  const g=preG, cmds=[];
+  for(const tr of $('#preRows').children){
+    const ch=tr.dataset.ch, lim=st.channels.find(c=>c.ch===ch).limits, val=k=>tr.querySelector(`[data-k="${k}"]`);
+    const n=k=>parseFloat(String(val(k).value).replace(',','.'));
+    const v=n('v'), i=n('i'), ov=n('ovp'), oc=n('ocp');
+    if([v,i,ov,oc].some(isNaN)){ toast(`${ch}: bitte alle Werte ausfüllen`); return; }
+    if(v>lim.v||i>lim.i){ toast(`${ch}: max. ${lim.v} V / ${lim.i} A`); return; }
+    cmds.push(`:PRESet${g}:SET:VOLTage ${ch},${v.toFixed(2)}`, `:PRESet${g}:SET:CURRent ${ch},${i.toFixed(3)}`,
+      `:PRESet${g}:SET:OVP ${ch},${val('ovp_on').checked?'ON':'OFF'},${ov.toFixed(2)}`,
+      `:PRESet${g}:SET:OCP ${ch},${val('ocp_on').checked?'ON':'OFF'},${oc.toFixed(3)}`);
+  }
+  if(await batch(cmds)) { log(`Preset P${g} gespeichert`); await preRead(); $('#preNote').textContent=`P${g} im Netzteil gespeichert.`; }
+}
+$('#preRead').onclick=preRead;
+$('#preSave').onclick=preSave;
+$('#preTake').onclick=()=>{ if(!st) return; st.channels.forEach(d=>preFill(d.ch,{v:d.vset,i:d.iset,ovp:d.ovp,ocp:d.ocp,ovp_on:d.ovp_on,ocp_on:d.ocp_on},true));
+  $('#preNote').textContent='Aktuelle Einstellungen eingetragen – mit „Speichern“ in P'+preG+' ablegen.'; };
+$('#preApply').onclick=async()=>{ if(document.querySelector('#preRows input.dirty') && !confirm('Es gibt ungespeicherte Änderungen. Trotzdem die im Gerät gespeicherte Gruppe P'+preG+' anwenden?')) return;
+  if(await batch([`:PRESet${preG}:APPLy`])){ log('Preset P'+preG+' angewendet'); $('#preNote').textContent=`P${preG} wurde als aktuelle Einstellung übernommen.`; } };
+$('#kPreset').onclick=()=>{ if($('#mPre').classList.contains('show')) return closeMenus(); if(!st) return toast('Kein Netzteil verbunden'); openMenu('mPre'); preRead(); };
+
+/* ---------- UTILITY ---------- */
+async function utilRead(){
+  const rd=async(c)=>await q1(c);
+  $('#uIdn').textContent=st&&st.idn||'–';
+  const map=[
+    [':SYSTem:BEEPer:STATe?', r=>$('#uBeep').checked=isOn(r)],
+    [':SYSTem:BRIGhtness?', r=>{ const v=lastNum(r); if(v!=null){ $('#uBright').value=v; $('#uBrightV').textContent=v+' %'; } }],
+    [':SYSTem:LOCK?', r=>$('#uLock').checked=isOn(r)],
+    [':SYSTem:KLOCk:STATe?', r=>$('#uKlock').checked=isOn(r)],
+    [':SYSTem:COMMunicate:LAN:DHCP:STATe?', r=>{ $('#uDhcp').checked=isOn(r); lanFields(); }],
+    [':SYSTem:COMMunicate:LAN:IPADdress?', r=>$('#uIp').value=unq(r)],
+    [':SYSTem:COMMunicate:LAN:SMASK?', r=>$('#uMask').value=unq(r)],
+    [':SYSTem:COMMunicate:LAN:GATEway?', r=>$('#uGw').value=unq(r)],
+    [':SYSTem:COMMunicate:RS232:BAUD?', r=>{ const v=lastNum(r); if(v) $('#uBaud').value=String(v); }],
+    [':SYSTem:VERSion?', r=>$('#uVer').textContent=r||'–'],
+    [':SYSTem:ERRor:COUNt?', r=>$('#uErrN').textContent=r==null?'–':String(lastNum(r))],
+  ];
+  for(const [c,f] of map){ const r=await rd(c); if(r!=null) f(r); }
+  document.querySelectorAll('#mUtil input').forEach(i=>i.classList.remove('dirty'));
+}
+function lanFields(){ const d=$('#uDhcp').checked; ['#uIp','#uMask','#uGw'].forEach(s=>$(s).disabled=d); }
+const utilSet=(cmd)=>batch([cmd]);
+$('#uBeep').onchange=e=>utilSet(`:SYSTem:BEEPer:STATe ${e.target.checked?'ON':'OFF'}`);
+let brT; $('#uBright').oninput=e=>{ $('#uBrightV').textContent=e.target.value+' %'; clearTimeout(brT); brT=setTimeout(()=>utilSet(`:SYSTem:BRIGhtness ${e.target.value}`),250); };
+$('#uLock').onchange=e=>utilSet(`:SYSTem:LOCK ${e.target.checked?'ON':'OFF'}`);
+$('#uKlock').onchange=e=>{ if(e.target.checked && !confirm('Fernsperre einschalten?\nDie Tasten am Gerät sind dann gesperrt (außer ON/OFF), bis die Sperre hier wieder gelöst oder das Gerät neu gestartet wird.')){ e.target.checked=false; return; }
+  utilSet(`:SYSTem:KLOCk:STATe ${e.target.checked?'ON':'OFF'}`); };
+$('#uBaud').onchange=e=>utilSet(`:SYSTem:COMMunicate:RS232:BAUD ${e.target.value}`);
+$('#uDhcp').onchange=lanFields;
+['#uIp','#uMask','#uGw'].forEach(s=>$(s).addEventListener('input',e=>e.target.classList.add('dirty')));
+const ipOk=t=>/^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(t);
+$('#uLanApply').onclick=async()=>{
+  const dhcp=$('#uDhcp').checked, ip=$('#uIp').value.trim(), mask=$('#uMask').value.trim(), gw=$('#uGw').value.trim();
+  if(!dhcp && ![ip,mask,gw].every(ipOk)) return toast('Bitte gültige IP-Adresse, Maske und Gateway eingeben');
+  const cur = (await q1(':SYSTem:COMMunicate:LAN:IPADdress?'));
+  const curIp = unq(cur);
+  if(!confirm(dhcp ? 'DHCP einschalten und übernehmen?\nDas Netzteil bekommt danach eventuell eine neue IP – die Verbindung bricht ab und muss neu gesucht werden.'
+                   : `Netzwerk übernehmen?\nIP ${ip} · Maske ${mask} · Gateway ${gw}${ip!==curIp?'\n\nDie Verbindung wird danach automatisch mit der neuen IP aufgebaut.':''}`)) return;
+  const cmds=[`:SYSTem:COMMunicate:LAN:DHCP:STATe ${dhcp?'ON':'OFF'}`];
+  if(!dhcp) cmds.push(`:SYSTem:COMMunicate:LAN:IPADdress "${ip}"`,`:SYSTem:COMMunicate:LAN:SMASK "${mask}"`,`:SYSTem:COMMunicate:LAN:GATEway "${gw}"`);
+  cmds.push(':SYSTem:COMMunicate:LAN:APPLy');
+  const r=await batch(cmds,true);
+  log('LAN-Einstellungen übernommen');
+  closeMenus();
+  if(dhcp){ toast('DHCP aktiv – bitte das Netzteil über „Verbindung → Netzwerk durchsuchen“ neu suchen.'); setTimeout(()=>openConn(true),4000); }
+  else if(ip!==curIp){ toast('Verbinde neu mit '+ip+' …'); setTimeout(()=>connectTo(ip,5025),4000); }
+};
+$('#uErrRead').onclick=async()=>{ const out=[]; for(let k=0;k<20;k++){ const r=await q1(':SYSTem:ERRor?'); if(r==null||/^\s*\+?0\b/.test(r)) break; out.push(r); }
+  $('#uErrs').textContent=out.length?out.join('\n'):'Keine Fehler gespeichert.'; $('#uErrN').textContent='0'; };
+$('#uTst').onclick=async()=>{ const r=await q1('*TST?'); if(r!=null) toast(lastNum(r)===0?'Selbsttest: OK':'Selbsttest meldet Fehler ('+r+')'); };
+$('#uRst').onclick=async()=>{ if(!confirm('Netzteil wirklich auf Werkseinstellungen zurücksetzen (*RST)?')) return; if(!confirm('Sicher? Alle aktuellen Einstellungen gehen verloren.')) return;
+  await batch(['*RST']); toast('Werkseinstellungen geladen'); setTimeout(utilRead,1200); };
+$('#uRead').onclick=utilRead;
+$('#kUtil').onclick=()=>{ if($('#mUtil').classList.contains('show')) return closeMenus(); if(!st) return toast('Kein Netzteil verbunden'); openMenu('mUtil'); utilRead(); };
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && document.querySelector('.menu.show')) closeMenus(); });
+/* ---------- CH3-Schnellwahl ---------- */
+document.querySelectorAll('#qs [data-q]').forEach(b=>b.onclick=()=>{ if(!st) return; const d=st.channels.find(c=>c.ch==='CH3'); if(!d) return;
+  d.vset=parseFloat(b.dataset.q); render(); setParam('CH3','vset',d.vset); });
+function paintQs(){ const d=st&&st.channels.find(c=>c.ch==='CH3'); document.querySelectorAll('#qs [data-q]').forEach(b=>b.classList.toggle('lit',!!d&&Math.abs((d.vset||0)-parseFloat(b.dataset.q))<0.005)); }
+
+/* ---------- WAVE: Verlauf von Spannung, Strom und Leistung ---------- */
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+const WCOL={CH1:'--c1',CH2:'--c2',CH3:'--c3',SER:'--c1',PARA:'--c1'};
+function waveScales(){
+  const ser=st.mode.startsWith('SER'), par=st.mode.startsWith('PARA');
+  return [
+    {k:1, u:'V', max: ser?60:30, ticks: ser?[0,20,40,60]:[0,10,20,30]},
+    {k:2, u:'A', max: par?10:5,  ticks: par?[0,4,8]:[0,2,4]},
+    {k:3, u:'W', max: (ser||par)?300:150, ticks: (ser||par)?[0,100,200,300]:[0,50,100,150]},
+  ];
+}
+function drawWave(){
+  const cv=$('#waveC'), box=$('#wave'), dpr=window.devicePixelRatio||1;
+  const W=box.clientWidth, H=box.clientHeight; if(!W||!H) return;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+  const fs=Math.max(9,W*0.034), font=getComputedStyle(document.body).fontFamily;
+  const legendH=fs*1.7, labelW=fs*2.5, gap=fs*0.45, bottomH=fs*1.3;
+  const x0=2, x1=W-labelW, plotH=(H-legendH-bottomH-gap*2)/3;
+  const span=TIMEBASES[tbIdx], tnow=Date.now()/1000;
+  // Legende
+  g.font=`${fs}px ${font}`; g.textBaseline='middle';
+  const chans=st.channels.map(c=>c.ch);
+  chans.forEach((ch,k)=>{ const x=x0+fs*0.6+k*(x1-x0)/chans.length, col=cssVar(WCOL[ch]);
+    g.fillStyle=col; g.fillText(ch+':',x,legendH/2); const tw=g.measureText(ch+': ').width;
+    g.strokeStyle=col; g.lineWidth=2; g.beginPath(); g.moveTo(x+tw,legendH/2); g.lineTo(x+tw+fs*3,legendH/2); g.stroke(); });
+  waveScales().forEach((sc,pi)=>{
+    const y0=legendH+pi*(plotH+gap), yb=y0+plotH;
+    g.fillStyle='#000'; g.fillRect(x0,y0,x1-x0,plotH);
+    // Raster: feine horizontale Linien, 5 vertikale Teilungen
+    g.lineWidth=1; g.strokeStyle='#2c2c2c';
+    for(let k=1;k<10;k++){ const y=Math.round(y0+k*plotH/10)+.5; g.beginPath(); g.moveTo(x0,y); g.lineTo(x1,y); g.stroke(); }
+    g.strokeStyle='#5a5a5a';
+    for(let k=1;k<5;k++){ const x=Math.round(x0+k*(x1-x0)/5)+.5; g.beginPath(); g.moveTo(x,y0); g.lineTo(x,yb); g.stroke(); }
+    g.strokeStyle='#d0d0d0'; g.strokeRect(x0+.5,y0+.5,x1-x0-1,plotH-1);
+    // Achsbeschriftung rechts
+    g.font=`${fs*0.9}px ${font}`; g.textBaseline='middle';
+    sc.ticks.forEach(t=>{ const y=yb-(t/sc.max)*plotH; g.fillStyle='#eee'; g.fillText(String(t),x1+fs*0.25,Math.min(yb-fs*0.45,Math.max(y0+fs*0.45,y)));
+      if(t===0){ g.fillStyle='#ff3b30'; g.fillText(sc.u, x1+fs*0.25+g.measureText('0').width+fs*0.2, yb-fs*0.45); } });
+    // Kurven
+    g.save(); g.beginPath(); g.rect(x0+1,y0+1,x1-x0-2,plotH-2); g.clip();
+    chans.forEach(ch=>{ const h=hist[ch]; if(!h||!h.length) return;
+      g.strokeStyle=cssVar(WCOL[ch]); g.lineWidth=Math.max(1.5,fs*0.13); g.lineJoin='round'; g.beginPath(); let started=false;
+      for(const s of h){ if(s[0]<tnow-span-1) continue;
+        const x=x1-((tnow-s[0])/span)*(x1-x0), y=yb-2-(Math.max(0,s[sc.k])/sc.max)*(plotH-4);
+        if(!started){ g.moveTo(x,y); started=true; } else g.lineTo(x,y); }
+      g.stroke(); });
+    g.restore();
+  });
+  g.font=`${fs*0.85}px ${font}`; g.fillStyle='#9a9a9a'; g.textBaseline='middle';
+  const lbl = span>=60 ? (span/60)+' min' : span+' s';
+  g.fillText(`◀ ${lbl}   (antippen: Zeitachse)`, x0+2, H-bottomH/2);
+}
+$('#kWave').onclick=()=>{ if(!st) return; wave=!wave; if(wave) zoom=false; closeMenus(); render(); };
+$('#wave').onclick=e=>{ e.stopPropagation(); tbIdx=(tbIdx+1)%TIMEBASES.length; drawWave(); };
+window.addEventListener('resize',()=>{ if(wave&&st) drawWave(); });
+
+/* ---------- LIST / DELAYER ---------- */
+const LD={tab:'list', ch:null, data:{}, timer:null, status:{}, busy:false};
+const ldEl=s=>document.querySelector(s);
+function ldD(ch){ ch=ch||LD.ch; return LD.data[ch]||(LD.data[ch]={
+  list:{rows:[],start:0,cycles:1,end:'OFF',loaded:false},
+  dly:{rows:[],start:0,cycles:1,end:'OFF',stop:'NONE',stopV:1,loaded:false}}); }
+const ldCur=()=>ldD()[LD.tab];
+const ldLim=()=>((st&&st.channels.find(c=>c.ch===LD.ch))||{limits:{v:32,i:5.2}}).limits;
+function ldMsg(t,cls){ const m=ldEl('#ldMsg'); m.textContent=t||''; m.className='ldmsg '+(cls||''); }
+const fmtT=s=>{ if(s==null||isNaN(s)) return '–'; if(s<60) return s.toFixed(1)+' s'; const m=Math.floor(s/60); if(m<60) return m+' min '+Math.round(s-m*60)+' s'; return Math.floor(m/60)+' h '+(m%60)+' min'; };
+
+async function ldPost(cmds){
+  const r=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmds:[`:INSTrument:SELect ${LD.ch}`,...cmds]})});
+  const j=await r.json();
+  if(!j.ok) throw new Error(j.error||'Fehler');
+  if(j.error) throw new Error('Gerät meldet: '+j.error);
+  return j.replies.slice(1);
+}
+function ldBlock(s){
+  s=String(s||'').trim();
+  if(s[0]==='#'){ const L=parseInt(s[1],10)||0; s=s.slice(2+L); }
+  return s.split(';').map(x=>x.trim()).filter(Boolean).map(x=>x.split(',').map(y=>y.trim()));
+}
+function ldParseStatus(s){
+  const p=String(s||'').split(',').map(x=>x.trim());
+  return {state:(p[0]||'OFF').toUpperCase(), rest:parseFloat(p[1]), cur:parseInt(p[2],10), endp:parseInt(p[3],10), cyc:parseInt(p[4],10)};
+}
+
+/* ----- Ablauf-Felder <-> Daten ----- */
+function ldSync(){
+  const D=ldCur();
+  D.start=Math.max(0,Math.min(2047,parseInt(ldEl('#aStart').value,10)||0));
+  D.cycles=Math.max(1,Math.min(99999,parseInt(ldEl('#aCyc').value,10)||1));
+  D.end=ldEl('#aEnd').value;
+  if(LD.tab==='dly'){ D.stop=ldEl('#dStop').value; D.stopV=parseFloat(ldEl('#dStopV').value)||0; }
+}
+function ldFill(){
+  const D=ldCur();
+  ldEl('#ld').dataset.tab=LD.tab;
+  document.querySelectorAll('#ld .ldtabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===LD.tab));
+  document.querySelectorAll('#ldCh button').forEach(b=>b.classList.toggle('on',b.dataset.ch===LD.ch));
+  const ends = LD.tab==='list' ? [['OFF','Ausgang aus'],['LAST','letzten Wert halten']]
+                               : [['OFF','Ausgang aus'],['ON','Ausgang ein'],['LAST','letzten Zustand halten']];
+  ldEl('#aEnd').innerHTML=ends.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
+  ldEl('#aEnd').value=ends.some(e=>e[0]===D.end)?D.end:'OFF';
+  ldEl('#aStart').value=D.start; ldEl('#aCyc').value=D.cycles;
+  if(LD.tab==='dly'){ ldEl('#dStop').value=D.stop||'NONE'; ldEl('#dStopV').value=D.stopV; }
+  ldTplRows(); ldTable(); ldDraw(); ldInfo(); ldPaintStatus();
+}
+
+/* ----- Tabelle ----- */
+function ldTable(){
+  const D=ldCur(), list=LD.tab==='list';
+  ldEl('#tHead').innerHTML = list ? '<tr><th>#</th><th>Spannung V</th><th>Strom A</th><th>Zeit s</th></tr>'
+                                  : '<tr><th>#</th><th>Ausgang ein</th><th>Zeit s</th></tr>';
+  const h=[];
+  D.rows.forEach((r,k)=>{
+    const n=D.start+k;
+    if(list) h.push(`<tr data-k="${k}"><td>${n}</td><td><input data-c="0" value="${r[0].toFixed(2)}" inputmode="decimal"></td><td><input data-c="1" value="${r[1].toFixed(3)}" inputmode="decimal"></td><td><input data-c="2" value="${r[2].toFixed(1)}" inputmode="decimal"></td></tr>`);
+    else h.push(`<tr data-k="${k}"><td>${n}</td><td><input type="checkbox" data-c="0"${r[0]?' checked':''}></td><td><input data-c="1" value="${r[1].toFixed(1)}" inputmode="decimal"></td></tr>`);
+  });
+  ldEl('#tBody').innerHTML=h.join('') || `<tr><td colspan="4" style="text-align:center;color:#6c727c;padding:18px">Keine Punkte – links eine ${list?'Kurve':'Ablauf'} erzeugen, „Vom Gerät lesen“ oder „+ Zeile“.</td></tr>`;
+}
+ldEl('#tBody').addEventListener('change',e=>{
+  const i=e.target, tr=i.closest('tr'); if(!tr||tr.dataset.k==null) return;
+  const D=ldCur(), r=D.rows[+tr.dataset.k], c=+i.dataset.c;
+  if(i.type==='checkbox') r[c]=i.checked;
+  else { const v=parseFloat(String(i.value).replace(',','.')); if(!isNaN(v)) r[c]=v; i.value=Number(r[c]).toFixed(LD.tab==='list'?[2,3,1][c]:1); }
+  ldDraw(); ldInfo();
+});
+ldEl('#tAdd').onclick=()=>{ const D=ldCur(), last=D.rows[D.rows.length-1];
+  if(D.start+D.rows.length>=2048) return ldMsg('Maximal 2048 Gruppen','err');
+  D.rows.push(LD.tab==='list' ? (last?last.slice():[5,1,1]) : [last?!last[0]:true, last?last[1]:1]); ldTable(); ldDraw(); ldInfo();
+  const tb=ldEl('.ldtable'); tb.scrollTop=tb.scrollHeight; };
+ldEl('#tDel').onclick=()=>{ ldCur().rows.pop(); ldTable(); ldDraw(); ldInfo(); };
+ldEl('#tClr').onclick=()=>{ if(ldCur().rows.length && !confirm('Alle Punkte aus der Tabelle entfernen?')) return; ldCur().rows=[]; ldTable(); ldDraw(); ldInfo(); };
+
+/* ----- LIST-Vorlagen ----- */
+function ldTplRows(){
+  const t=ldEl('#lTpl').value, obj=ldEl('#lObj').value;
+  ldEl('#lRowInv').classList.toggle('hide',!['SINE','PULSE','RAMP'].includes(t));
+  ldEl('#lRowDuty').classList.toggle('hide',t!=='PULSE');
+  ldEl('#lRowSym').classList.toggle('hide',t!=='RAMP');
+  ldEl('#lRowExp').classList.toggle('hide',!['RISE','FALL'].includes(t));
+  document.querySelectorAll('#ld [data-u=obj]').forEach(u=>u.textContent=obj==='V'?'V':'A');
+  ldEl('[data-u=fix]').textContent=obj==='V'?'A':'V';
+  ldEl('#lFixLbl').textContent=obj==='V'?'Strombegrenzung':'Spannung';
+  const m=ldEl('#dMode').value;
+  ldEl('#dRowOn').classList.toggle('hide',!m.startsWith('FIX')); ldEl('#dRowOff').classList.toggle('hide',!m.startsWith('FIX'));
+  ldEl('#dRowBase').classList.toggle('hide',m.startsWith('FIX')); ldEl('#dRowStep').classList.toggle('hide',m.startsWith('FIX'));
+  const sv=ldEl('#dStop').value; ldEl('#dRowStopV').classList.toggle('hide',LD.tab!=='dly'||sv==='NONE');
+  ldEl('#dStopU').textContent={V:'V',C:'A',P:'W'}[sv.slice(1)]||'';
+}
+function ldGenList(){
+  const num=s=>parseFloat(String(ldEl(s).value).replace(',','.'));
+  const t=ldEl('#lTpl').value, obj=ldEl('#lObj').value, lim=ldLim();
+  const mn=num('#lMin'), mx=num('#lMax'), fix=num('#lFix');
+  const n=Math.max(2,Math.min(2048,parseInt(ldEl('#lPts').value,10)||2));
+  const dt=Math.max(0.1,Math.min(9999.9,Math.round((num('#lDt')||0.1)*10)/10));
+  const inv=ldEl('#lInv').checked, duty=Math.min(.99,Math.max(.01,(num('#lDuty')||50)/100));
+  const sym=Math.min(1,Math.max(0,(isNaN(num('#lSym'))?50:num('#lSym'))/100)), ex=Math.min(10,Math.max(0,num('#lExp')||0));
+  const objMax = obj==='V'?lim.v:lim.i, fixMax = obj==='V'?lim.i:lim.v;
+  if([mn,mx,fix].some(isNaN)) throw new Error('Bitte alle Werte ausfüllen');
+  if(mn<0||mx>objMax||mn>mx) throw new Error(`Minimum/Maximum müssen zwischen 0 und ${objMax} liegen (Min ≤ Max)`);
+  if(fix<0||fix>fixMax) throw new Error(`${obj==='V'?'Strombegrenzung':'Spannung'}: 0 … ${fixMax}`);
+  const rows=[];
+  for(let k=0;k<n;k++){
+    const x=k/n, u=n>1?k/(n-1):0; let y;
+    switch(t){
+      case 'SINE': y=0.5+0.5*Math.sin(2*Math.PI*x); if(inv) y=1-y; break;
+      case 'PULSE': y=x<duty?1:0; if(inv) y=1-y; break;
+      case 'RAMP': y = sym>=1 ? x : sym<=0 ? 1-x : (x<sym ? x/sym : (1-x)/(1-sym)); if(inv) y=1-y; break;
+      case 'UP': y=u; break;
+      case 'DN': y=1-u; break;
+      case 'UPDN': { const h=(n-1)/2; y=h>0?1-Math.abs(k-h)/h:0; break; }
+      case 'RISE': y = ex>0 ? (1-Math.exp(-ex*u))/(1-Math.exp(-ex)) : u; break;
+      case 'FALL': y = ex>0 ? (Math.exp(-ex*u)-Math.exp(-ex))/(1-Math.exp(-ex)) : 1-u; break;
+      default: y=0;
+    }
+    const val=mn+(mx-mn)*y;
+    rows.push(obj==='V' ? [+val.toFixed(2), +fix.toFixed(3), dt] : [+fix.toFixed(2), +val.toFixed(3), dt]);
+  }
+  return rows;
+}
+function ldGenDly(){
+  const num=s=>parseFloat(String(ldEl(s).value).replace(',','.'));
+  const m=ldEl('#dMode').value, n=Math.max(1,Math.min(2048,parseInt(ldEl('#dPts').value,10)||1));
+  const r1=x=>Math.max(0.1,Math.min(9999.9,Math.round(x*10)/10));
+  const rows=[];
+  for(let k=0;k<n;k++){
+    if(m==='FIX1'||m==='FIX0'){ const on = (k%2===0) === (m==='FIX1'); rows.push([on, r1(on?num('#dOn'):num('#dOff'))]); }
+    else { const t=num('#dBase')+(m==='INC'?1:-1)*k*num('#dStep'); rows.push([k%2===0, r1(t)]); }
+  }
+  if(rows.some(r=>isNaN(r[1]))) throw new Error('Bitte alle Zeiten ausfüllen');
+  return rows;
+}
+ldEl('#lGen').onclick=()=>{ try{ const D=ldCur(); D.rows=ldGenList();
+    if(D.start+D.rows.length>2048) D.start=2048-D.rows.length;
+    ldFill(); ldMsg(`${D.rows.length} Punkte erzeugt – mit „Ans Gerät senden“ übertragen.`,'ok'); }catch(e){ ldMsg(e.message,'err'); } };
+ldEl('#dGen').onclick=()=>{ try{ const D=ldCur(); D.rows=ldGenDly();
+    if(D.start+D.rows.length>2048) D.start=2048-D.rows.length;
+    ldFill(); ldMsg(`${D.rows.length} Schritte erzeugt – mit „Ans Gerät senden“ übertragen.`,'ok'); }catch(e){ ldMsg(e.message,'err'); } };
+['#lTpl','#lObj','#dMode','#dStop'].forEach(s=>ldEl(s).addEventListener('change',()=>{ ldTplRows(); ldInfo(); }));
+['#lPts','#lDt','#dPts','#dOn','#dOff','#dBase','#dStep'].forEach(s=>ldEl(s).addEventListener('input',ldInfo));
+['#aStart','#aCyc','#aEnd','#dStop','#dStopV'].forEach(s=>ldEl(s).addEventListener('change',()=>{ ldSync(); ldTable(); ldInfo(); }));
+
+function ldInfo(){
+  const D=ldCur(), tot=D.rows.reduce((a,r)=>a+Math.max(0.1,r[r.length-1]),0);
+  const cyc=Math.max(1,parseInt(ldEl('#aCyc').value,10)||1);
+  if(LD.tab==='list'){
+    const n=Math.max(2,parseInt(ldEl('#lPts').value,10)||2), dt=Math.max(0.1,parseFloat(ldEl('#lDt').value)||0.1), per=n*dt;
+    const periodic=['SINE','PULSE','RAMP'].includes(ldEl('#lTpl').value);
+    ldEl('#lInfo').innerHTML = (periodic?`Eine Periode: <b>${fmtT(per)}</b> → <b>${(1/per).toFixed(per<10?3:4)} Hz</b><br>`:`Dauer der Kurve: <b>${fmtT(per)}</b><br>`)
+      + `Kürzeste Zeit pro Punkt am Gerät: 0,1 s.<br>Tabelle: <b>${D.rows.length}</b> Punkte, ${fmtT(tot)} × ${cyc} = <b>${fmtT(tot*cyc)}</b>`;
+  } else {
+    ldEl('#dInfo').innerHTML = `Tabelle: <b>${D.rows.length}</b> Schritte, ${fmtT(tot)} × ${cyc} = <b>${fmtT(tot*cyc)}</b>`;
+  }
+}
+
+/* ----- Vorschau ----- */
+function ldDraw(){
+  const cv=ldEl('#ldCv'), box=cv.parentElement, dpr=window.devicePixelRatio||1, W=box.clientWidth, H=box.clientHeight;
+  if(!W||!H) return;
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+  const D=ldCur(), list=LD.tab==='list', font=getComputedStyle(document.body).fontFamily;
+  const L=46, R=list?46:14, T=14, B=24, pw=W-L-R, ph=H-T-B;
+  g.strokeStyle='#1d2024'; g.lineWidth=1;
+  for(let k=0;k<=4;k++){ const y=Math.round(T+k*ph/4)+.5; g.beginPath(); g.moveTo(L,y); g.lineTo(L+pw,y); g.stroke(); }
+  for(let k=0;k<=8;k++){ const x=Math.round(L+k*pw/8)+.5; g.beginPath(); g.moveTo(x,T); g.lineTo(x,T+ph); g.stroke(); }
+  g.font=`11px ${font}`; g.fillStyle='#7c838d';
+  if(!D.rows.length){ g.fillText('Keine Punkte',L+8,T+18); return; }
+  const tot=D.rows.reduce((a,r)=>a+Math.max(0.1,r[r.length-1]),0);
+  const xs=[0]; D.rows.forEach(r=>xs.push(xs[xs.length-1]+Math.max(0.1,r[r.length-1])));
+  const X=t=>L+(t/tot)*pw;
+  // aktuelle Position
+  const s=LD.status[LD.tab];
+  if(s && s.state!=='OFF' && !isNaN(s.cur)){ const k=s.cur-D.start; if(k>=0&&k<D.rows.length){ g.fillStyle='#1e5bff44'; g.fillRect(X(xs[k]),T,Math.max(2,X(xs[k+1])-X(xs[k])),ph); } }
+  const col=cssVar(WCOL[LD.ch]||'--c1');
+  const step=(val,max,color,dash)=>{ g.strokeStyle=color; g.lineWidth=2; g.setLineDash(dash); g.beginPath();
+    D.rows.forEach((r,k)=>{ const y=T+ph-(val(r)/max)*ph; if(k===0) g.moveTo(X(xs[k]),y); else g.lineTo(X(xs[k]),y); g.lineTo(X(xs[k+1]),y); }); g.stroke(); g.setLineDash([]); };
+  g.textBaseline='middle';
+  if(list){
+    const vmax=Math.max(0.1,...D.rows.map(r=>r[0]))*1.1, imax=Math.max(0.01,...D.rows.map(r=>r[1]))*1.1;
+    step(r=>r[1],imax,'#9aa0a8',[4,3]); step(r=>r[0],vmax,col,[]);
+    for(let k=0;k<=4;k++){ const y=T+ph-k*ph/4;
+      g.fillStyle=col; g.textAlign='right'; g.fillText((vmax*k/4).toFixed(vmax<10?2:1),L-6,y);
+      g.fillStyle='#9aa0a8'; g.textAlign='left'; g.fillText((imax*k/4).toFixed(imax<1?3:2),L+pw+6,y); }
+    g.textAlign='left'; g.fillStyle=col; g.fillText('V',4,T+4); g.fillStyle='#9aa0a8'; g.textAlign='right'; g.fillText('A',W-4,T+4);
+  } else {
+    step(r=>r[0]?1:0,1.15,'#2cc24a',[]);
+    g.textAlign='right'; g.fillStyle='#2cc24a'; g.fillText('Ein',L-6,T+ph-ph/1.15); g.fillStyle='#7c838d'; g.fillText('Aus',L-6,T+ph);
+  }
+  g.textAlign='left'; g.fillStyle='#7c838d'; g.textBaseline='alphabetic';
+  g.fillText('0 s',L,H-6); g.textAlign='right'; g.fillText(fmtT(tot),L+pw,H-6); g.textAlign='left';
+}
+window.addEventListener('resize',()=>{ if(ldEl('#ld').classList.contains('show')) ldDraw(); });
+
+/* ----- Geraet lesen / senden ----- */
+async function ldReadRows(q,start,n,map){
+  const cmds=[]; for(let k=start;k<start+n;k+=10) cmds.push(`${q} ${k},${Math.min(10,start+n-k)}`);
+  const rows=[];
+  for(let i=0;i<cmds.length;i+=100){
+    const rep=await ldPost(cmds.slice(i,i+100));
+    rep.forEach(s=>ldBlock(s).forEach(r=>rows.push(map(r))));
+    ldMsg(`Lese … ${Math.min(rows.length,n)}/${n}`);
+  }
+  return rows.slice(0,n);
+}
+async function ldRead(){
+  if(LD.busy) return; LD.busy=true;
+  const tab=LD.tab, D=ldCur(); ldMsg('Lese vom Gerät …');
+  try{
+    if(tab==='list'){
+      const [b]=await ldPost([':LISTout:BASE?']); const p=String(b||'').split(',').map(x=>x.trim());
+      D.start=parseInt(p[0],10)||0; const n=Math.max(1,parseInt(p[1],10)||1); D.cycles=parseInt(p[2],10)||1; D.end=(p[3]||'OFF').toUpperCase();
+      D.rows=await ldReadRows(':LISTout:PARAmeter?',D.start,n,r=>[parseFloat(r[1])||0,parseFloat(r[2])||0,parseFloat(r[3])||0.1]);
+    } else {
+      const r=await ldPost([':DELAY:STARt?',':DELAY:GROUPs?',':DELAY:CYCLEs?',':DELAY:ENDState?',':DELAY:STOP?']);
+      D.start=lastNum(r[0])||0; const n=Math.max(1,lastNum(r[1])||1); D.cycles=lastNum(r[2])||1;
+      D.end=String(r[3]||'OFF').trim().toUpperCase();
+      const sp=String(r[4]||'NONE').split(','); D.stop=sp[0].trim().toUpperCase()||'NONE'; if(sp[1]) D.stopV=parseFloat(sp[1])||0;
+      D.rows=await ldReadRows(':DELAY:PARAmeter?',D.start,n,r=>[/^(ON|1)$/i.test(r[1]),parseFloat(r[2])||0.1]);
+    }
+    D.loaded=true; if(LD.tab===tab) ldFill();
+    ldMsg(`${D.rows.length} ${tab==='list'?'Punkte':'Schritte'} vom Gerät gelesen.`,'ok');
+  }catch(e){ ldMsg(e.message,'err'); }
+  LD.busy=false;
+}
+async function ldSend(){
+  if(LD.busy) return;
+  ldSync(); const D=ldCur(), list=LD.tab==='list', lim=ldLim(), n=D.rows.length;
+  if(!n) return ldMsg('Die Tabelle ist leer.','err');
+  if(D.start+n>2048) return ldMsg('Startgruppe + Anzahl darf 2048 nicht überschreiten.','err');
+  for(let k=0;k<n;k++){ const r=D.rows[k], t=r[r.length-1];
+    if(!(t>=0.1&&t<=9999.9)) return ldMsg(`Zeile ${D.start+k}: Zeit muss zwischen 0,1 und 9999,9 s liegen.`,'err');
+    if(list && !(r[0]>=0&&r[0]<=lim.v&&r[1]>=0&&r[1]<=lim.i)) return ldMsg(`Zeile ${D.start+k}: max. ${lim.v} V / ${lim.i} A`,'err'); }
+  LD.busy=true;
+  try{
+    const [s]=await ldPost([list?':LISTout:STATe?':':DELAY:STATe?']);
+    if(ldParseStatus(s).state!=='OFF'){ ldMsg('Der Ablauf läuft gerade – bitte zuerst stoppen.','err'); LD.busy=false; return; }
+    const cmds=D.rows.map((r,k)=> list ? `:LISTout:PARAmeter ${D.start+k},${r[0].toFixed(2)},${r[1].toFixed(3)},${r[2].toFixed(1)}`
+                                         : `:DELAY:PARAmeter ${D.start+k},${r[0]?'ON':'OFF'},${r[1].toFixed(1)}`);
+    for(let i=0;i<cmds.length;i+=150){ await ldPost(cmds.slice(i,i+150)); ldMsg(`Sende … ${Math.min(i+150,n)}/${n}`); }
+    if(list) await ldPost([`:LISTout:BASE ${D.start},${n},${D.cycles},${D.end}`]);
+    else await ldPost([':DELAY:GROUPs 1',`:DELAY:STARt ${D.start}`,`:DELAY:GROUPs ${n}`,`:DELAY:CYCLEs ${D.cycles}`,`:DELAY:ENDState ${D.end}`,
+                       D.stop==='NONE'?':DELAY:STOP NONE':`:DELAY:STOP ${D.stop},${Number(D.stopV).toFixed(3)}`]);
+    D.loaded=true;
+    log(`${list?'LIST':'DELAYER'} ${LD.ch}: ${n} ${list?'Punkte':'Schritte'} ab Gruppe ${D.start} gesendet`);
+    ldMsg(`${n} ${list?'Punkte':'Schritte'} im Netzteil gespeichert. Mit ▶ Start abspielen.`,'ok');
+  }catch(e){ ldMsg(e.message,'err'); }
+  LD.busy=false;
+}
+ldEl('#ldRead').onclick=ldRead;
+ldEl('#ldSend').onclick=ldSend;
+
+/* ----- Start / Stop / Status ----- */
+ldEl('#ldStart').onclick=async()=>{
+  const list=LD.tab==='list', cmds=[list?':LISTout:STATe ON':':DELAY:STATe ON'];
+  if(list && ldEl('#aOn').checked) cmds.push(`:OUTPut:STATe ${LD.ch},ON`);
+  try{ await ldPost(cmds); log(`${list?'LIST':'DELAYER'} ${LD.ch} gestartet`); ldMsg('Gestartet.','ok'); forceFull=true; ldPoll(); }catch(e){ ldMsg(e.message,'err'); }
+};
+ldEl('#ldStop').onclick=async()=>{
+  try{ await ldPost([LD.tab==='list'?':LISTout:STATe OFF':':DELAY:STATe OFF']); log(`${LD.tab==='list'?'LIST':'DELAYER'} ${LD.ch} gestoppt`); ldMsg('Gestoppt.'); forceFull=true; ldPoll(); }catch(e){ ldMsg(e.message,'err'); }
+};
+let ldPrevCur=null;
+async function ldPoll(){
+  if(!ldEl('#ld').classList.contains('show')||LD.busy) return;
+  try{
+    const r=await ldPost([':LISTout:STATe?',':DELAY:STATe?']);
+    LD.status={list:ldParseStatus(r[0]), dly:ldParseStatus(r[1])};
+  }catch(e){ LD.status={}; }
+  ldPaintStatus();
+}
+function ldPaintStatus(){
+  const s=LD.status[LD.tab], other=LD.status[LD.tab==='list'?'dly':'list'];
+  const stEl=ldEl('#ldSt'), D=ldCur();
+  if(!s){ stEl.textContent='–'; stEl.className='st'; ['#ldPt','#ldRest','#ldCyc'].forEach(x=>ldEl(x).textContent='–'); return; }
+  const names={ON:'LÄUFT',PAUSED:'PAUSE',ERROR:'FEHLER',OFF:'GESTOPPT'};
+  stEl.textContent=(LD.tab==='list'?'LIST ':'DELAYER ')+(names[s.state]||s.state)
+    +(other&&other.state==='ON'?` · ${LD.tab==='list'?'Delayer':'List'} läuft`:'');
+  stEl.className='st'+(s.state==='ON'?' run':s.state==='ERROR'?' err':'');
+  const run=s.state!=='OFF';
+  ldEl('#ldPt').textContent = run ? `${s.cur} / ${s.endp}` : '–';
+  ldEl('#ldRest').textContent = run ? fmtT(s.rest) : '–';
+  ldEl('#ldCyc').textContent = run ? String(s.cyc) : '–';
+  ldEl('#ldStart').disabled=run; ldEl('#ldStop').disabled=!run;
+  ['#ldSend','#lGen','#dGen'].forEach(x=>ldEl(x).disabled=run);
+  const cur=run?s.cur:null;
+  if(cur!==ldPrevCur){
+    ldPrevCur=cur;
+    document.querySelectorAll('#tBody tr.cur').forEach(t=>t.classList.remove('cur'));
+    if(run){ const tr=ldEl(`#tBody tr[data-k="${s.cur-D.start}"]`); if(tr){ tr.classList.add('cur'); const tb=ldEl('.ldtable'); if(tr.offsetTop<tb.scrollTop||tr.offsetTop>tb.scrollTop+tb.clientHeight-30) tb.scrollTop=tr.offsetTop-60; } }
+    ldDraw();
+  }
+}
+
+/* ----- Speicher ----- */
+for(let i=1;i<=10;i++) ldEl('#ldSlot').add(new Option('Platz '+i,i));
+ldEl('#ldSave').onclick=async()=>{ const n=ldEl('#ldSlot').value, t=LD.tab==='list'?'LST':'DLY';
+  if(!confirm(`${LD.tab==='list'?'LIST':'DELAYER'}-Einstellungen im Gerät auf Platz ${n} speichern?\n(Vorher „Ans Gerät senden“, falls die Tabelle geändert wurde.)`)) return;
+  try{ await ldPost([`:MEMory:STORe ${t},${n}`]); ldMsg(`Auf Platz ${n} gespeichert.`,'ok'); log(`${t} auf Platz ${n} gespeichert`); }catch(e){ ldMsg(e.message,'err'); } };
+ldEl('#ldLoad').onclick=async()=>{ const n=ldEl('#ldSlot').value, t=LD.tab==='list'?'LST':'DLY';
+  try{ const [v]=await ldPost([`:MEMory:VALid? ${t},${n}`]); if(v!=null && /^NO/i.test(v)) return ldMsg(`Platz ${n} ist leer.`,'err');
+       await ldPost([`:MEMory:LOAD ${t},${n}`]); log(`${t} von Platz ${n} geladen`); Object.values(LD.data).forEach(d=>d[LD.tab].loaded=false); await ldRead(); }catch(e){ ldMsg(e.message,'err'); } };
+
+/* ----- Oeffnen / Wechseln ----- */
+function ldOpen(){
+  if(!st) return toast('Kein Netzteil verbunden');
+  closeMenus(); cancelEdit();
+  const chans=st.channels.map(c=>c.ch);
+  if(!chans.includes(LD.ch)) LD.ch=st.channels[sel]?st.channels[sel].ch:chans[0];
+  ldEl('#ldCh').innerHTML=chans.map(c=>`<button data-ch="${c}" style="--a:${cssVar(WCOL[c])}">${c}</button>`).join('');
+  ldEl('#ldCh').querySelectorAll('button').forEach(b=>b.onclick=()=>{ ldSync(); LD.ch=b.dataset.ch; LD.status={}; ldPrevCur=undefined; ldFill(); if(!ldCur().loaded) ldRead(); ldPoll(); });
+  ldEl('#ld').classList.add('show'); ldMsg('');
+  ldFill();
+  if(!ldCur().loaded) ldRead();
+  clearInterval(LD.timer); LD.timer=setInterval(ldPoll,1000); ldPoll();
+}
+function ldClose(){ ldSync(); ldEl('#ld').classList.remove('show'); clearInterval(LD.timer); }
+document.querySelectorAll('#ld .ldtabs button').forEach(b=>b.onclick=()=>{ ldSync(); LD.tab=b.dataset.tab; ldPrevCur=undefined; ldMsg(''); ldFill(); if(!ldCur().loaded) ldRead(); ldPoll(); });
+ldEl('#ldClose').onclick=ldClose;
+ldEl('#ld').addEventListener('click',e=>{ if(e.target.id==='ld') ldClose(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && ldEl('#ld').classList.contains('show')) ldClose(); });
+ldEl('#kList').onclick=ldOpen;
+
+
+/* ---------- Verbindungsdialog ---------- */
+let everOk=false, failN=0, autoOpened=false, cfg=null;
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function devRow(r,removable){
+  const b=document.createElement('div'); b.className='dev'+(cfg&&cfg.host===r.host&&!cfg.sim?' cur':'');
+  b.innerHTML=`<b>${esc(r.host)}${r.port&&r.port!=5025?':'+r.port:''}</b><small>${esc(r.idn||'')}</small>${removable?'<span class="x" title="Aus Liste entfernen">✕</span>':''}`;
+  b.onclick=e=>{ if(e.target.classList.contains('x')){ e.stopPropagation(); fetch('/api/forget',{method:'POST',body:JSON.stringify({host:r.host})}).then(loadCfg); return; } connectTo(r.host,r.port||5025); };
+  return b;
+}
+async function loadCfg(){
+  cfg=await (await fetch('/api/config',{cache:'no-store'})).json();
+  const rec=$('#recent'); rec.innerHTML='';
+  if(!cfg.recent.length) rec.innerHTML='<div class="empty">Noch keine Verbindung gespeichert.</div>';
+  cfg.recent.forEach(r=>rec.appendChild(devRow(r,true)));
+  if(!$('#mHost').value) $('#mHost').value = cfg.host || (cfg.recent[0]&&cfg.recent[0].host) || '';
+}
+async function scan(){
+  const btn=$('#scanBtn'), box=$('#found');
+  btn.disabled=true; box.innerHTML='<div class="empty"><span class="spin"></span>&nbsp; Suche Geräte mit SCPI-Port 5025 …</div>';
+  try{
+    const r=await (await fetch('/api/scan',{cache:'no-store'})).json();
+    $('#scanInfo').textContent=r.networks.join(', ');
+    box.innerHTML='';
+    if(!r.found.length) box.innerHTML='<div class="empty">Kein Gerät gefunden. Ist LAN am Netzteil aktiv und im selben Netz?</div>';
+    r.found.forEach(d=>box.appendChild(devRow(d,false)));
+  }catch(e){ box.innerHTML='<div class="empty">Suche fehlgeschlagen.</div>'; }
+  btn.disabled=false;
+}
+async function connectTo(host,port){
+  const m=$('#cMsg'); m.className='msg'; m.innerHTML=`<span class="spin"></span>&nbsp; Verbinde mit ${esc(host)} …`;
+  try{
+    const j=await (await fetch('/api/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({host,port})})).json();
+    if(!j.ok){ m.className='msg err'; m.textContent=j.error; return; }
+    m.className='msg ok'; m.textContent='Verbunden: '+(j.idn||j.label);
+    resetView(); setTimeout(()=>$('#conn').classList.remove('show'),600); loadCfg();
+  }catch(e){ m.className='msg err'; m.textContent='Fehler: '+e.message; }
+}
+function resetView(){ hist={}; st=null; energy={}; lastT={}; prevOut={}; pend={}; focus=null; buf=null; sel=0; $('#cols').dataset.layout=''; $('#cols').innerHTML='<div class="offline">Verbinde …</div>'; forceFull=true; everOk=false; failN=0; }
+function openConn(auto){
+  $('#conn').classList.add('show'); $('#cMsg').textContent=''; loadCfg();
+  if(auto || $('#found').querySelector('.empty')) scan();
+}
+$('#connBtn').onclick=()=>openConn(false);
+$('#lan').onclick=()=>openConn(false);
+$('#cClose').onclick=()=>$('#conn').classList.remove('show');
+$('#conn').addEventListener('click',e=>{ if(e.target.id==='conn') $('#conn').classList.remove('show'); });
+$('#scanBtn').onclick=scan;
+$('#mGo').onclick=()=>connectTo($('#mHost').value.trim(), parseInt($('#mPort').value)||5025);
+$('#mHost').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#mGo').click(); });
+$('#cSim').onclick=()=>connectTo('SIM',5025);
+$('#cQuit').onclick=async()=>{ if(!confirm('PSU Control beenden?')) return; await fetch('/api/quit',{method:'POST'}).catch(()=>{});
+  document.body.innerHTML='<div style="color:#aaa;font:16px -apple-system,sans-serif;text-align:center;padding:20vh 20px">PSU Control wurde beendet.<br><br>Dieses Fenster kann geschlossen werden.</div>'; };
+
+if(window.PSU_NATIVE){ $('#cQuit').style.display='none';
+  $('.hint').textContent='Wert antippen (oder Softkey) → Zahl auf dem Ziffernfeld eingeben → OK. ▲/▼ ändern in kleinen Schritten. Kästchen schaltet OVP/OCP ein/aus. Tippen auf Wh/W wechselt die Anzeige. WAVE zeigt den Verlauf, Tippen ins Diagramm ändert die Zeitachse.'; }
+poll();
+</script>
+</body>
+</html>

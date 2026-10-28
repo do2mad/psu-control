@@ -1,0 +1,56 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Prüfen (Python / JavaScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m py_compile mac/udp3305.py tools/fake_device.py
+      - run: node --check web/ios-bridge.js
+
+  mac-app:
+    name: Mac-App bauen
+    runs-on: macos-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./mac/build-mac-app.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PSU-Control-mac
+          path: dist/PSU Control.zip
+
+  ios-app:
+    name: iOS-App bauen (Simulator, ohne Signatur)
+    runs-on: macos-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          xcodebuild -project ios/PSUControl.xcodeproj -target PSUControl \
+            -sdk iphonesimulator -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build
+
+  release:
+    name: Release anlegen
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: [mac-app, ios-app]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: PSU-Control-mac
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: PSU Control.zip
+          generate_release_notes: true

@@ -1,0 +1,32 @@
+# Alternative zum mitgelieferten Xcode-Projekt:
+#   brew install xcodegen && cd ios && xcodegen generate
+# erzeugt PSUControl.xcodeproj neu aus dieser Beschreibung.
+name: PSUControl
+options:
+  bundleIdPrefix: de.1mhz
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: de
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.3"
+    CURRENT_PROJECT_VERSION: "3"
+targets:
+  PSUControl:
+    type: application
+    platform: iOS
+    sources:
+      - path: PSUControl
+      - path: ../web
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.1mhz.psucontrol
+        INFOPLIST_FILE: PSUControl/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SUPPORTS_MACCATALYST: NO
+        CODE_SIGN_STYLE: Automatic

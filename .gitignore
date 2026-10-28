@@ -1,0 +1,21 @@
+# Build-Ergebnisse
+dist/
+build/
+DerivedData/
+*.xcarchive
+*.ipa
+
+# Xcode – benutzerspezifisch
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+ios/PSUControl.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+
+# macOS / Python
+.DS_Store
+__pycache__/
+*.pyc
+
+# Archive / Transfer
+*.tar.gz
+_alt/
