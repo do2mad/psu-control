@@ -7,6 +7,7 @@ Fertige Texte und Angaben für **App Store Connect**. Die Zeichenbegrenzungen vo
 | [`metadata.de.md`](metadata.de.md) | Store-Texte Deutsch |
 | [`metadata.en.md`](metadata.en.md) | Store-Texte Englisch |
 | [`review-notes.md`](review-notes.md) | Hinweise für die App-Prüfung (Englisch, zum Einfügen) |
+| [`testflight.md`](testflight.md) | **TestFlight:** welche Texte in welches Feld, Testergruppe, öffentlicher Link |
 | `screenshots/` | Screenshots in den von Apple verlangten Größen (iPhone 6,9″: 1320 × 2868, iPad 13″: 2064 × 2752) |
 
 ## Allgemeine Angaben

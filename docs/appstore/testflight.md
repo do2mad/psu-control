@@ -5,6 +5,8 @@ App Store Connect → **Apps → PSU Control → TestFlight**
 ## 1. Testinformationen (links: *Testinformationen*)
 Einmal pro App ausfüllen. Gilt für alle Builds.
 
+> Tipp: Texte abschnittsweise kopieren. Falls beim Einfügen Wörter vertauscht werden, ist meist die Textersetzung von macOS schuld (Systemeinstellungen → Tastatur → Textersetzungen).
+
 | Feld | Inhalt |
 |---|---|
 | **Beta-App-Beschreibung** (Deutsch) | siehe unten „Beschreibung DE“ |
@@ -13,28 +15,39 @@ Einmal pro App ausfüllen. Gilt für alle Builds.
 | **Marketing-URL** (optional) | `https://github.com/do2mad/psu-control` |
 | **Datenschutz-URL** | `https://github.com/do2mad/psu-control/blob/main/PRIVACY.md` |
 | **Beta-App-Review – Kontakt** | Vorname, Nachname, Telefon, E-Mail |
-| **Anmeldung erforderlich** | **nein** (kein Häkcreview-notes.md`](review-notes.mdüfung** | Inhalt von [`rreview-notes.md`](review-notes.md |
+| **Anmeldung erforderlich** | **nein** (kein Häkchen) |
+| **Anmerkungen für die Prüfung** | Inhalt von [`review-notes.md`](review-notes.md) |
 
 > Die Datenschutz-URL funktioniert erst, wenn das Projekt auf GitHub liegt. Deshalb zuerst `./tools/publish-github.sh <name>` ausführen, dann die Links hier mit deinem Namen eintragen.
 
 ### Beschreibung DE
 ```
-PSU Control steuert das Labornetzteil UNI-T UDP3305S-E über das lokale Netzwerk – mit einer Oberfläche wie die Gerätefront.
+PSU Control steuert das Labornetzteil UNI-T UDP3305S-E über das lokale Netzwerk. Die Oberfläche sieht aus wie die Front des Geräts.
 
-Ohne Netzteil ausprobieren: Beim Start „Simulator (ohne Gerät)“ wählen.
-Mit Netzteil: LANDELAYERät aktivieren, in der App „Netzwerk durchsuchen“ oder die IP-Adresse eintragen und den Zugriff auf das lokale Netzwerk erlauben.
+Ohne Netzteil ausprobieren:
+Beim ersten Start im Fenster "Netzteil verbinden" auf "Simulator (ohne Gerät)" tippen.
 
-Funktionen: Messwerte, Spannung/Strom, OVP/OCP, Ausgänge, SER/PARA, WAVE-Kurven, LIST/DELAYER, PRESET, STORAGE, UTILITY, Tastensperre, SCPI-Konsole.
+Mit Netzteil:
+1. Am Netzteil unter UTILITY die LAN-Schnittstelle einschalten.
+2. In der App "Netzwerk durchsuchen" antippen oder die IP-Adresse des Netzteils eingeben.
+3. Den Zugriff auf das lokale Netzwerk erlauben, wenn iOS danach fragt.
+
+Funktionen: Messwerte, Spannung und Strom einstellen, OVP/OCP, Ausgänge schalten, Seriell/Parallel, WAVE-Kurven, LIST und DELAYER, PRESET, STORAGE, UTILITY, Tastensperre, SCPI-Konsole.
 ```
 
 ### Beschreibung EN
 ```
-PSU Control remote-controls the UNI-T UDP3305S-E bench power supply over the local network – with an interface modelled on the instrument's front panel (interface in German).
+PSU Control remote-controls the UNI-T UDP3305S-E bench power supply over the local network. The interface looks like the instrument's front panel (interface in German).
 
-Try it without an instrument: choose "Simulator (ohne Gerät)" at start.
-With an instrument: enable LAN on the supply, tap "Netzwerk durchsuchen" (search network) or enter its IP address, and allow local network access.
+Try it without an instrument:
+On first launch, tap "Simulator (ohne Gerät)" in the "Netzteil verbinden" (connect) window.
 
-Features: readings, voltage/current, OVP/OCP, outputs, series/parallel, WAVE curves, LIST/DELAYER, PRESET, STORAGE, UTILITY, key lock, SCPI console.
+With an instrument:
+1. On the power supply, enable the LAN interface under UTILITY.
+2. In the app, tap "Netzwerk durchsuchen" (search network) or enter the supply's IP address.
+3. Allow local network access when iOS asks.
+
+Features: readings, set voltage and current, OVP/OCP, switch outputs, series/parallel, WAVE curves, LIST and DELAYER, PRESET, STORAGE, UTILITY, key lock, SCPI console.
 ```
 
 ## 2. Pro Build: „Was soll getestet werden?“
