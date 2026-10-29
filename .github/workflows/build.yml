@@ -47,10 +47,14 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: PSU-Control-mac
+      - run: mv "PSU Control.zip" PSU-Control-mac.zip
       - uses: softprops/action-gh-release@v2
         with:
-          files: PSU Control.zip
+          name: PSU Control ${{ github.ref_name }}
+          files: PSU-Control-mac.zip
+          body_path: .github/release-body.md
           generate_release_notes: true

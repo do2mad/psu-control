@@ -43,7 +43,7 @@ Install **PSU Control** via the [TestFlight beta](https://testflight.apple.com/j
 On first start, iOS asks for permission to access the **local network**. Tap **Allow**. Without this permission the app cannot reach the instrument. You can change it later in *Settings → Privacy & Security → Local Network*.
 
 ### Mac
-1. Download `PSU Control.zip` from the [releases page](../../../releases/latest) and unzip it.
+1. Download `PSU-Control-mac.zip` from the [releases page](../../../releases/latest) and unzip it.
 2. Move **PSU Control.app** to your *Applications* folder.
 3. Because the app is not notarised by Apple, macOS blocks the first launch:
    * macOS 15 and later: try to open it, then go to *System Settings → Privacy & Security* and click **Open Anyway**.

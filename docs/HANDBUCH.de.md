@@ -41,7 +41,7 @@ Die App spricht SCPI über **TCP-Port 5025**. Schließe die UNI-T-PC-Software, b
 Beim ersten Start fragt iOS nach dem Zugriff auf das **lokale Netzwerk**. Tippe auf **Erlauben**, ohne diese Erlaubnis erreicht die App das Netzteil nicht. Ändern lässt sich das später unter *Einstellungen → Datenschutz & Sicherheit → Lokales Netzwerk*.
 
 ### Mac
-1. `PSU Control.zip` von der [Release-Seite](../../../releases/latest) laden und entpacken.
+1. `PSU-Control-mac.zip` von der [Release-Seite](../../../releases/latest) laden und entpacken.
 2. **PSU Control.app** in den Ordner *Programme* ziehen.
 3. Die App ist nicht von Apple beglaubigt, deshalb blockiert macOS den ersten Start:
    * macOS 15 und neuer: Öffnen versuchen, dann *Systemeinstellungen → Datenschutz & Sicherheit* → **Trotzdem öffnen**.

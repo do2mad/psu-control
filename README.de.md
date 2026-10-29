@@ -19,7 +19,7 @@ Die Oberfläche bildet die Gerätefront nach, mit Display, Softkeys und Tasten, 
 | Plattform | |
 |---|---|
 | **iPhone / iPad** | **[TestFlight-Beta](https://testflight.apple.com/join/tYkUeqYG)** · App Store: *folgt* <!-- APPSTORE_URL --> |
-| **Mac** | [Neueste Version](../../releases/latest) → `PSU Control.zip` |
+| **Mac** | [Neueste Version](../../releases/latest) → `PSU-Control-mac.zip` |
 | **Quellcode** | dieses Repository (MIT-Lizenz) |
 
 ## Funktionen

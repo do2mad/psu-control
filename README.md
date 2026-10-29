@@ -19,7 +19,7 @@ The interface recreates the instrument's front panel – display, soft keys and 
 | Platform | |
 |---|---|
 | **iPhone / iPad** | **[TestFlight beta](https://testflight.apple.com/join/tYkUeqYG)** · App Store: *coming soon* <!-- APPSTORE_URL --> |
-| **Mac** | [Latest release](../../releases/latest) → `PSU Control.zip` |
+| **Mac** | [Latest release](../../releases/latest) → `PSU-Control-mac.zip` |
 | **Source** | this repository (MIT licence) |
 
 > The user interface is currently in **German**. The documentation is available in English and German.
